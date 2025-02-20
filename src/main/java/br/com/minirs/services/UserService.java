@@ -99,9 +99,18 @@ public class UserService {
 
     @Transactional
     public ResponseEntity<?> followUser(Long loggedUserId, Long followUserId) {
-        if (userRepository.existsById(loggedUserId) || userRepository.existsById(followUserId)){
+        if (userRepository.existsById(loggedUserId) && userRepository.existsById(followUserId)){
+
+            if (loggedUserId.equals(followUserId)){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User can't follow himself");
+            }
+
             var loggedUser = userRepository.getReferenceById(loggedUserId);
             var followUser = userRepository.getReferenceById(followUserId);
+
+            if (loggedUser.getFollowing().contains(followUser)){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already following another user.");
+            }
 
             if (!loggedUser.getActive() || !followUser.getActive()) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: One of the users is inactive.");
@@ -116,9 +125,18 @@ public class UserService {
 
     @Transactional
     public ResponseEntity<?> unfollowUser(Long loggedUserId, Long followUserId) {
-        if (userRepository.existsById(loggedUserId) || userRepository.existsById(followUserId)){
+        if (userRepository.existsById(loggedUserId) && userRepository.existsById(followUserId)){
+
+            if (loggedUserId.equals(followUserId)){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User can't unfollow himself");
+            }
+
             var loggedUser = userRepository.getReferenceById(loggedUserId);
             var unfollowUser = userRepository.getReferenceById(followUserId);
+
+            if (!loggedUser.getFollowing().contains(unfollowUser)){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not following another user.");
+            }
 
             if (!loggedUser.getActive() || !unfollowUser.getActive()) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: One of the users is inactive.");
