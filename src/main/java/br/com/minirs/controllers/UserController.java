@@ -17,6 +17,15 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @GetMapping
+    public ResponseEntity<?> getAllUsers(){
+        return userService.getAllUsers();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id){
+        return userService.getUserById(id);
+    }
 
     @GetMapping("/followers/{id}")
     public ResponseEntity<?> getFollowersList(@PathVariable Long id){

@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -167,6 +168,22 @@ public class UserService {
             var followingList = user.getFollowing().stream().map(User::getUserName).collect(Collectors.toList());
 
             return ResponseEntity.status(HttpStatus.OK).body(followingList);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
+    }
+
+    @Transactional
+    public ResponseEntity<?> getAllUsers() {
+        List<DtoReturnUser> users = userRepository.findAll().stream()
+                .map(DtoReturnUser::new).toList();
+        return ResponseEntity.status(HttpStatus.OK).body(users);
+    }
+
+    @Transactional
+    public ResponseEntity<?> getUserById(Long id) {
+        if (userRepository.existsById(id)){
+            var user = new DtoReturnUser(userRepository.getReferenceById(id));
+            return ResponseEntity.status(HttpStatus.OK).body(user);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
     }

@@ -31,6 +31,8 @@ public class User {
     private String password;
     private String biography;
     private String gender;
+    private Integer followersCount;
+    private Integer followingCount;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
@@ -52,6 +54,8 @@ public class User {
 
         this.registrationDate = LocalDate.now();
         this.active = true;
+        this.followersCount = 0;
+        this.followingCount = 0;
 
         if (data.biography() != null){ this.biography = data.biography(); }
         if (data.gender() != null){ this.gender = data.gender(); }
@@ -85,11 +89,17 @@ public class User {
         if (!this.following.contains(userToFollow)) {
             this.following.add(userToFollow);
             userToFollow.getFollowers().add(this);
+
+            userToFollow.setFollowersCount(userToFollow.getFollowersCount()+1);
+            this.followingCount++;
         }
     }
 
     public void unfollowUser(User userToUnfollow) {
         this.following.remove(userToUnfollow);
         userToUnfollow.getFollowers().remove(this);
+
+        userToUnfollow.setFollowersCount(userToUnfollow.getFollowersCount()-1);
+        this.followingCount--;
     }
 }
