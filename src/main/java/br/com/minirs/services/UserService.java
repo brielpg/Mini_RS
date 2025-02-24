@@ -40,7 +40,16 @@ public class UserService {
     @Transactional
     public ResponseEntity<?> loginUser(DtoLoginUser data) {
         var user = userRepository.findByEmail(data.email());
-        if (user != null && user.getPassword().equals(data.password())){
+
+        if (user == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ERROR: Email or Password incorrect.");
+        }
+
+        if (!user.getActive()){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
+        }
+
+        if (user.getPassword().equals(data.password())){
 
             return ResponseEntity.status(HttpStatus.CREATED).body(new DtoReturnUser(user));
         }
@@ -154,6 +163,11 @@ public class UserService {
     public ResponseEntity<?> getFollowersList(Long id) {
         if (userRepository.existsById(id)){
             var user = userRepository.getReferenceById(id);
+
+            if (!user.getActive()){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
+            }
+
             var followingList = user.getFollowers().stream().map(User::getUserName).collect(Collectors.toList());
 
             return ResponseEntity.status(HttpStatus.OK).body(followingList);
@@ -165,6 +179,11 @@ public class UserService {
     public ResponseEntity<?> getFollowingList(Long id) {
         if (userRepository.existsById(id)){
             var user = userRepository.getReferenceById(id);
+
+            if (!user.getActive()){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
+            }
+
             var followingList = user.getFollowing().stream().map(User::getUserName).collect(Collectors.toList());
 
             return ResponseEntity.status(HttpStatus.OK).body(followingList);
@@ -175,6 +194,7 @@ public class UserService {
     @Transactional
     public ResponseEntity<?> getAllUsers() {
         List<DtoReturnUser> users = userRepository.findAll().stream()
+                .filter(User::getActive)
                 .map(DtoReturnUser::new).toList();
         return ResponseEntity.status(HttpStatus.OK).body(users);
     }
@@ -182,8 +202,13 @@ public class UserService {
     @Transactional
     public ResponseEntity<?> getUserById(Long id) {
         if (userRepository.existsById(id)){
-            var user = new DtoReturnUser(userRepository.getReferenceById(id));
-            return ResponseEntity.status(HttpStatus.OK).body(user);
+            var user = userRepository.getReferenceById(id);
+
+            if (!user.getActive()){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
     }
