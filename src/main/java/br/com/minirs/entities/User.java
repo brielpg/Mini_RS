@@ -1,4 +1,4 @@
-package br.com.minirs.models;
+package br.com.minirs.entities;
 
 import br.com.minirs.dto.user.DtoCreateUser;
 import br.com.minirs.dto.user.DtoUpdateUser;
@@ -33,12 +33,13 @@ public class User {
     private String gender;
     private Integer followersCount;
     private Integer followingCount;
+    private Integer postCount;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
             name = "followers",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "follower_id")
+            joinColumns = @JoinColumn(name = "userId"),
+            inverseJoinColumns = @JoinColumn(name = "followerId")
     )
     private Set<User> followers = new HashSet<>();
 
@@ -56,6 +57,7 @@ public class User {
         this.active = true;
         this.followersCount = 0;
         this.followingCount = 0;
+        this.postCount = 0;
 
         if (data.biography() != null){ this.biography = data.biography(); }
         if (data.gender() != null){ this.gender = data.gender(); }

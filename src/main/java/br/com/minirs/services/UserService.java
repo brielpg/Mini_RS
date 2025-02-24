@@ -4,7 +4,7 @@ import br.com.minirs.dto.user.DtoCreateUser;
 import br.com.minirs.dto.user.DtoLoginUser;
 import br.com.minirs.dto.user.DtoReturnUser;
 import br.com.minirs.dto.user.DtoUpdateUser;
-import br.com.minirs.models.User;
+import br.com.minirs.entities.User;
 import br.com.minirs.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
