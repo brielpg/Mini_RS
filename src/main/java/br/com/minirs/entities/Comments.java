@@ -1,47 +1,47 @@
 package br.com.minirs.entities;
 
-import br.com.minirs.dto.post.DtoCreatePost;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
-@Table(name = "minirs_posts")
+@Table(name = "minirs_comments")
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @ToString
 @EqualsAndHashCode(of = "id")
-public class Post {
+public class Comments {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String content;
     private Boolean active;
-    private LocalDate publishDate;
+    private Boolean updated;
     private List<LocalDate> updateDates = new ArrayList<>();
+    private LocalDate publishDate;
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "postId")
+    private Post post;
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "userId")
-    private User postOwner;
-    @OneToMany(mappedBy = "post", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private Set<Comments> comment = new HashSet<>();
-    private Integer likeCount;
+    private User user;
 
-    public Post(DtoCreatePost data, User postOwner){
-        this.content = data.content();
+    public Comments(User userCommented, Post post, String content){
+        this.content = content;
+        this.post = post;
+        this.user = userCommented;
         this.active = true;
         this.publishDate = LocalDate.now();
-        this.likeCount = 0;
-        this.postOwner = postOwner;
+        this.updated = false;
     }
 
-    public void updatePost(String content) {
+    public void updateComment(String content) {
         this.content = content;
         this.updateDates.add(LocalDate.now());
+        if (!this.updated) {this.updated = true;}
     }
 }
