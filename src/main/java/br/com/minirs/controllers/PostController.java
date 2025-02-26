@@ -2,6 +2,7 @@ package br.com.minirs.controllers;
 
 import br.com.minirs.dto.post.DtoCreatePost;
 import br.com.minirs.dto.post.DtoUpdatePost;
+import br.com.minirs.dto.reactions.DtoLike;
 import br.com.minirs.services.PostService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,5 +57,17 @@ public class PostController {
     @Transactional
     public ResponseEntity<?> reactivatePost(@PathVariable Long id){
         return postService.reactivatePost(id);
+    }
+
+    @PostMapping("/like")
+    @Transactional
+    public ResponseEntity<?> likePost(@RequestBody @Valid DtoLike data){
+        return postService.likePost(data);
+    }
+
+    @DeleteMapping("/dislike")
+    @Transactional
+    public ResponseEntity<?> dislikePost(@RequestBody @Valid DtoLike data){
+        return postService.dislikePost(data);
     }
 }

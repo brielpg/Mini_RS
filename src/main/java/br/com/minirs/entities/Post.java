@@ -1,6 +1,7 @@
 package br.com.minirs.entities;
 
 import br.com.minirs.dto.post.DtoCreatePost;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,6 +31,8 @@ public class Post {
     private User postOwner;
     @OneToMany(mappedBy = "post", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private Set<Comments> comment = new HashSet<>();
+    @JsonIgnore
+    private List<Long> likesByUserId = new ArrayList<>();
     private Integer likeCount;
 
     public Post(DtoCreatePost data, User postOwner){

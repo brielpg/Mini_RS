@@ -3,6 +3,7 @@ package br.com.minirs.services;
 import br.com.minirs.dto.post.DtoCreatePost;
 import br.com.minirs.dto.post.DtoReturnPost;
 import br.com.minirs.dto.post.DtoUpdatePost;
+import br.com.minirs.dto.reactions.DtoLike;
 import br.com.minirs.entities.Post;
 import br.com.minirs.repositories.PostRepository;
 import br.com.minirs.repositories.UserRepository;
@@ -133,5 +134,57 @@ public class PostService {
             return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnPost(post));
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: Post not found.");
+    }
+
+    @Transactional
+    public ResponseEntity<?> likePost(DtoLike data) {
+        if (!userRepository.existsById(data.userId()) || !postRepository.existsById(data.postId())){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User or Post not found.");
+        }
+
+        var post = postRepository.getReferenceById(data.postId());
+
+        if (!post.getActive()){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Post was deleted.");
+        }
+
+        var user = userRepository.getReferenceById(data.userId());
+
+        for (var i: post.getLikesByUserId()){
+            if (i.equals(user.getId())){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User already liked this post");
+            }
+        }
+
+        post.getLikesByUserId().add(data.userId());
+        post.setLikeCount(post.getLikeCount()+1);
+
+        return ResponseEntity.status(HttpStatus.OK).body(user.getUserName() + " LIKED THE POST");
+    }
+
+    @Transactional
+    public ResponseEntity<?> dislikePost(DtoLike data) {
+        if (!userRepository.existsById(data.userId()) || !postRepository.existsById(data.postId())){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User or Post not found.");
+        }
+
+        var post = postRepository.getReferenceById(data.postId());
+
+        if (!post.getActive()){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Post was deleted.");
+        }
+
+        var user = userRepository.getReferenceById(data.userId());
+
+        for (var i: post.getLikesByUserId()){
+            if (i.equals(user.getId())){
+                post.getLikesByUserId().remove(i);
+                post.setLikeCount(post.getLikeCount()-1);
+                
+                return ResponseEntity.status(HttpStatus.OK).body("LIKE REMOVED");
+            }
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User didn't like this post.");
+
     }
 }
