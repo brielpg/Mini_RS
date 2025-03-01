@@ -34,16 +34,16 @@ public class CommentController {
         return commentService.updateComment(data);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{commentId}/{userId}")
     @Transactional
-    public ResponseEntity<?> deleteComment(@PathVariable Long id){
-        return commentService.deleteComment(id);
+    public ResponseEntity<?> deleteComment(@PathVariable Long commentId, @PathVariable Long userId){
+        return commentService.deleteComment(commentId, userId);
     }
 
-    @DeleteMapping("/reactive/{id}")
+    @DeleteMapping("/reactive/{commentId}/{userId}")
     @Transactional
-    public ResponseEntity<?> reactiveComment(@PathVariable Long id){
-        return commentService.reactiveComment(id);
+    public ResponseEntity<?> reactiveComment(@PathVariable Long commentId, @PathVariable Long userId){
+        return commentService.reactiveComment(commentId, userId);
     }
 }
 

@@ -46,9 +46,13 @@ public class CommentService {
     }
 
     @Transactional
-    public ResponseEntity<?> deleteComment(Long id) {
-        if (commentRepository.existsById(id)){
-            var comment = commentRepository.getReferenceById(id);
+    public ResponseEntity<?> deleteComment(Long commentId, Long userId) {
+        if (commentRepository.existsById(commentId)){
+            var comment = commentRepository.getReferenceById(commentId);
+            var user = userRepository.getReferenceById(userId);
+
+            if (comment.getUser() != user) return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not allowed to delete this comment.");
+
             if (comment.getActive()){
                 comment.setActive(false);
 
@@ -60,9 +64,13 @@ public class CommentService {
     }
 
     @Transactional
-    public ResponseEntity<?> reactiveComment(Long id) {
-        if (commentRepository.existsById(id)){
-            var comment = commentRepository.getReferenceById(id);
+    public ResponseEntity<?> reactiveComment(Long commentId, Long userId) {
+        if (commentRepository.existsById(commentId)){
+            var comment = commentRepository.getReferenceById(commentId);
+            var user = userRepository.getReferenceById(userId);
+
+            if (comment.getUser() != user) return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not allowed to reactivate this comment.");
+
             if (!comment.getActive()){
                 comment.setActive(true);
 
@@ -77,6 +85,10 @@ public class CommentService {
     public ResponseEntity<?> updateComment(DtoUpdateComment data) {
         if (commentRepository.existsById(data.commentId())){
             var comment = commentRepository.getReferenceById(data.commentId());
+            var user = userRepository.getReferenceById(data.userId());
+
+            if (comment.getUser() != user) return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not allowed to update this comment.");
+
             if (comment.getActive()){
                 comment.updateComment(data.content());
 
