@@ -4,6 +4,7 @@ import br.com.minirs.dto.reactions.DtoCreateComment;
 import br.com.minirs.dto.reactions.DtoReturnComment;
 import br.com.minirs.dto.reactions.DtoUpdateComment;
 import br.com.minirs.entities.Comments;
+import br.com.minirs.entities.PrivacyStatusEnum;
 import br.com.minirs.repositories.CommentRepository;
 import br.com.minirs.repositories.PostRepository;
 import br.com.minirs.repositories.UserRepository;
@@ -33,6 +34,11 @@ public class CommentService {
 
         var user = userRepository.getReferenceById(data.userId());
         var post = postRepository.getReferenceById(data.postId());
+
+        if (!user.getFollowing().contains(post.getPostOwner()) && post.getPostOwner().getProfilePrivacyStatus().equals(PrivacyStatusEnum.PRIVATE)){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User is not following post owner.");
+        }
+
         var comment = new Comments(user, post, data.content());
         commentRepository.save(comment);
 
