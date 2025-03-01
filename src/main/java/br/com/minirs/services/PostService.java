@@ -41,13 +41,15 @@ public class PostService {
     }
 
     @Transactional
-    public ResponseEntity<?> deletePost(Long id) {
-        if (postRepository.existsById(id)){
-            var post = postRepository.getReferenceById(id);
+    public ResponseEntity<?> deletePost(Long postId, Long userId) {
+        if (postRepository.existsById(postId)){
+            var post = postRepository.getReferenceById(postId);
+            var user = userRepository.getReferenceById(userId);
+
+            if (post.getPostOwner() != user) return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not allowed to delete this post.");
+
             if (post.getActive()){
                 post.setActive(false);
-
-                var user = userRepository.getReferenceById(post.getPostOwner().getId());
                 user.setPostCount(user.getPostCount()-1);
 
                 return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnPost(post));
@@ -58,13 +60,15 @@ public class PostService {
     }
 
     @Transactional
-    public ResponseEntity<?> reactivatePost(Long id) {
-        if (postRepository.existsById(id)){
-            var post = postRepository.getReferenceById(id);
+    public ResponseEntity<?> reactivatePost(Long postId, Long userId) {
+        if (postRepository.existsById(postId)){
+            var post = postRepository.getReferenceById(postId);
+            var user = userRepository.getReferenceById(userId);
+
+            if (post.getPostOwner() != user) return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not allowed to reactivate this post.");
+
             if (!post.getActive()){
                 post.setActive(true);
-
-                var user = userRepository.getReferenceById(post.getPostOwner().getId());
                 user.setPostCount(user.getPostCount()+1);
 
                 return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnPost(post));
@@ -78,6 +82,10 @@ public class PostService {
     public ResponseEntity<?> updatePost(DtoUpdatePost data) {
         if (postRepository.existsById(data.postId())){
             var post = postRepository.getReferenceById(data.postId());
+            var user = userRepository.getReferenceById(data.userId());
+
+            if (post.getPostOwner() != user) return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not allowed to update this post.");
+
             if (post.getActive()){
                 post.updatePost(data.content());
 

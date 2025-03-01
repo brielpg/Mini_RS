@@ -53,16 +53,16 @@ public class PostController {
         return postService.updatePost(data);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{postId}/{userId}")
     @Transactional
-    public ResponseEntity<?> deletePost(@PathVariable Long id){
-        return postService.deletePost(id);
+    public ResponseEntity<?> deletePost(@PathVariable Long postId, @PathVariable Long userId){
+        return postService.deletePost(postId, userId);
     }
 
-    @DeleteMapping("/reactivate/{id}")
+    @DeleteMapping("/reactivate/{postId}/{userId}")
     @Transactional
-    public ResponseEntity<?> reactivatePost(@PathVariable Long id){
-        return postService.reactivatePost(id);
+    public ResponseEntity<?> reactivatePost(@PathVariable Long postId, @PathVariable Long userId){
+        return postService.reactivatePost(postId, userId);
     }
 
     @PostMapping("/like")
