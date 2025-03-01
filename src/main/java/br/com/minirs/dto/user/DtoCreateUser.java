@@ -1,5 +1,6 @@
 package br.com.minirs.dto.user;
 
+import br.com.minirs.entities.PrivacyStatusEnum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,6 +17,8 @@ public record DtoCreateUser(
         String email,
         @NotNull(message = "Birth date é obrigatório")
         LocalDate birthDate,
+        @NotNull(message = "Profile privacy é obrigatório")
+        PrivacyStatusEnum profilePrivacyStatus,
         @NotNull(message = "Password é obrigatório")
         String password,
         String biography,

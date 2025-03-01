@@ -21,16 +21,22 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    //USER INFO
     private String fullName;
     private String userName;
     private String email;
     private LocalDate birthDate;
     private LocalDate registrationDate;
-    private Boolean active;
-    @JsonIgnore
-    private String password;
     private String biography;
     private String gender;
+    @JsonIgnore
+    private String password;
+
+    //STATUS
+    private Boolean active;
+    @Enumerated(EnumType.STRING)
+    private PrivacyStatusEnum profilePrivacyStatus;
     private Integer followersCount;
     private Integer followingCount;
     private Integer postCount;
@@ -52,6 +58,7 @@ public class User {
         this.email = data.email();
         this.birthDate = data.birthDate();
         this.password = data.password();
+        this.profilePrivacyStatus = data.profilePrivacyStatus();
 
         this.registrationDate = LocalDate.now();
         this.active = true;
@@ -75,6 +82,9 @@ public class User {
         }
         if (data.birthDate() != null){
             this.birthDate = data.birthDate();
+        }
+        if(data.profilePrivacyStatus() != null){
+            this.profilePrivacyStatus = data.profilePrivacyStatus();
         }
         if (data.password() != null){
             this.password = data.password();

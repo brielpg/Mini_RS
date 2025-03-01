@@ -1,5 +1,6 @@
 package br.com.minirs.dto.user;
 
+import br.com.minirs.entities.PrivacyStatusEnum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 
@@ -13,6 +14,7 @@ public record DtoUpdateUser(
         @Email
         String email,
         LocalDate birthDate,
+        PrivacyStatusEnum profilePrivacyStatus,
         String password,
         String biography,
         String gender
