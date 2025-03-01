@@ -35,6 +35,12 @@ public class PostController {
         return postService.getFollowingUsersPosts(userId);
     }
 
+    @GetMapping("/feed")
+    @Transactional
+    public ResponseEntity<?> getPublicFeed(){
+        return postService.getPublicFeed();
+    }
+
     @PostMapping
     @Transactional
     public ResponseEntity<?> createPost(@RequestBody @Valid DtoCreatePost data){

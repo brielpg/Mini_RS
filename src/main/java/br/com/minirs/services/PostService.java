@@ -187,4 +187,13 @@ public class PostService {
         return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User didn't like this post.");
 
     }
+
+    @Transactional
+    public ResponseEntity<?> getPublicFeed() {
+        var publicPosts = postRepository.findAllPostsWherePostOwnerProfileIsPublic().stream()
+                .map(DtoReturnPost::new)
+                .toList();
+
+        return ResponseEntity.status(HttpStatus.OK).body(publicPosts);
+    }
 }
