@@ -101,10 +101,10 @@ public class PostService {
         if (userRepository.existsById(userId)){
             var user = userRepository.getReferenceById(userId);
             if (user.getActive()){
-                var postsByOwner = postRepository.findByPostOwner(user);
+                var postsByOwner = postRepository.findActivePostsByPostOwner(user);
                 List<DtoReturnPost> posts = postsByOwner.stream()
-                        .filter(Post::getActive)
-                        .map(DtoReturnPost::new).toList();
+                        .map(DtoReturnPost::new)
+                        .toList();
 
                 return ResponseEntity.status(HttpStatus.OK).body(posts);
             }
@@ -119,9 +119,9 @@ public class PostService {
             var user = userRepository.getReferenceById(userId);
             if (user.getActive()){
                 var posts = user.getFollowing().stream()
-                        .flatMap(i -> postRepository.findByPostOwner(i).stream())
-                        .filter(Post::getActive)
-                        .map(DtoReturnPost::new).toList();
+                        .flatMap(i -> postRepository.findActivePostsByPostOwner(i).stream())
+                        .map(DtoReturnPost::new)
+                        .toList();
 
                 return ResponseEntity.status(HttpStatus.OK).body(posts);
             }
