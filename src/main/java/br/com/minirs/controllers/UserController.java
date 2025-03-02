@@ -49,18 +49,6 @@ public class UserController {
         return userService.loginUser(data);
     }
 
-    @PostMapping("/follow/{loggedUserId}/{followUserId}")
-    @Transactional
-    public ResponseEntity<?> followUser(@PathVariable Long loggedUserId, @PathVariable Long followUserId){
-        return userService.followUser(loggedUserId, followUserId);
-    }
-
-    @PostMapping("/unfollow/{loggedUserId}/{followUserId}")
-    @Transactional
-    public ResponseEntity<?> unfollowUser(@PathVariable Long loggedUserId, @PathVariable Long followUserId){
-        return userService.unfollowUser(loggedUserId, followUserId);
-    }
-
     @PutMapping
     @Transactional
     public ResponseEntity<?> updateUser(@RequestBody @Valid DtoUpdateUser data){
