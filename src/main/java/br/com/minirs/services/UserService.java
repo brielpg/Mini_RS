@@ -141,9 +141,9 @@ public class UserService {
 
     @Transactional
     public ResponseEntity<?> getAllUsers() {
-        List<DtoReturnUser> users = userRepository.findAll().stream()
-                .filter(User::getActive)
-                .map(DtoReturnUser::new).toList();
+        List<DtoReturnUser> users = userRepository.findActiveUsers().stream()
+                .map(DtoReturnUser::new)
+                .toList();
         return ResponseEntity.status(HttpStatus.OK).body(users);
     }
 
