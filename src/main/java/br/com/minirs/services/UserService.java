@@ -24,7 +24,8 @@ public class UserService {
     @Transactional
     public ResponseEntity<?> createUser(DtoCreateUser data) {
 
-        validateUniqueUserFields(data.email(), data.userName());
+        if (this.findByEmail(data.email()) != null) ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Email already registered.");
+        if (this.findByUserName(data.userName()) != null) ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: There is already a user with this username.");
 
         var newUser = new User(data);
         this.save(newUser);
@@ -60,7 +61,8 @@ public class UserService {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
             }
 
-            validateUniqueUserFields(data.email(), data.userName());
+            if (this.findByEmail(data.email()) != null) ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Email already registered.");
+            if (this.findByUserName(data.userName()) != null) ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: There is already a user with this username.");
 
             user.updateData(data);
             this.save(user);
@@ -175,15 +177,5 @@ public class UserService {
 
     private User findByUserName(String username) {
         return userRepository.findByUserName(username);
-    }
-
-    private void validateUniqueUserFields(String email, String username){
-        if (this.findByEmail(email) != null){
-            ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Email already registered.");
-        }
-
-        if (this.findByUserName(username) != null){
-            ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: There is already a user with this username.");
-        }
     }
 }

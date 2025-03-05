@@ -5,7 +5,6 @@ import br.com.minirs.dto.user.DtoReturnUser;
 import br.com.minirs.entities.FollowRequest;
 import br.com.minirs.entities.PrivacyStatusEnum;
 import br.com.minirs.repositories.FollowRequestRepository;
-import br.com.minirs.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,19 +15,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class FollowService {
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @Autowired
     private FollowRequestRepository followRequestRepository;
 
     @Transactional
     public ResponseEntity<?> acceptFollowRequest(Long requestId, Long requestedUserId) {
-        if (followRequestRepository.existsById(requestId) && userRepository.existsById(requestedUserId)){
-            var followRequest = followRequestRepository.getReferenceById(requestId);
-            var requested = userRepository.getReferenceById(requestedUserId);
+        if (this.existsById(requestId) && userService.existsById(requestedUserId)){
+            var followRequest = this.getReferenceById(requestId);
+            var requested = userService.getReferenceById(requestedUserId);
 
             if(followRequest.getRequested().equals(requested) && followRequest.getActive()){
                 followRequest.acceptRequest();
+                this.save(followRequest);
 
                 return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(followRequest.getRequester()));
             }
@@ -39,12 +39,13 @@ public class FollowService {
 
     @Transactional
     public ResponseEntity<?> denyFollowRequest(Long requestId, Long requestedUserId) {
-        if (followRequestRepository.existsById(requestId) && userRepository.existsById(requestedUserId)){
-            var followRequest = followRequestRepository.getReferenceById(requestId);
-            var requested = userRepository.getReferenceById(requestedUserId);
+        if (this.existsById(requestId) && userService.existsById(requestedUserId)){
+            var followRequest = this.getReferenceById(requestId);
+            var requested = userService.getReferenceById(requestedUserId);
 
             if(followRequest.getRequested().equals(requested) && followRequest.getActive()){
                 followRequest.denyRequest();
+                this.save(followRequest);
 
                 return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(followRequest.getRequester()));
             }
@@ -55,14 +56,14 @@ public class FollowService {
 
     @Transactional
     public ResponseEntity<?> followUser(Long loggedUserId, Long followUserId) {
-        if (userRepository.existsById(loggedUserId) && userRepository.existsById(followUserId)){
+        if (userService.existsById(loggedUserId) && userService.existsById(followUserId)){
 
             if (loggedUserId.equals(followUserId)){
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User can't follow himself");
             }
 
-            var loggedUser = userRepository.getReferenceById(loggedUserId);
-            var followUser = userRepository.getReferenceById(followUserId);
+            var loggedUser = userService.getReferenceById(loggedUserId);
+            var followUser = userService.getReferenceById(followUserId);
 
             if (loggedUser.getFollowing().contains(followUser)){
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already following another user.");
@@ -77,11 +78,12 @@ public class FollowService {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: A follow request has already been submitted.");
                 }
                 var followRequest = new FollowRequest(loggedUser, followUser);
-                followRequestRepository.save(followRequest);
+                this.save(followRequest);
                 return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnFollowRequest(followRequest));
             }
 
             loggedUser.followUser(followUser);
+            userService.save(loggedUser);
 
             return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(loggedUser));
         }
@@ -90,14 +92,14 @@ public class FollowService {
 
     @Transactional
     public ResponseEntity<?> unfollowUser(Long loggedUserId, Long followUserId) {
-        if (userRepository.existsById(loggedUserId) && userRepository.existsById(followUserId)){
+        if (userService.existsById(loggedUserId) && userService.existsById(followUserId)){
 
             if (loggedUserId.equals(followUserId)){
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User can't unfollow himself");
             }
 
-            var loggedUser = userRepository.getReferenceById(loggedUserId);
-            var unfollowUser = userRepository.getReferenceById(followUserId);
+            var loggedUser = userService.getReferenceById(loggedUserId);
+            var unfollowUser = userService.getReferenceById(followUserId);
 
             if (!loggedUser.getFollowing().contains(unfollowUser)){
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not following another user.");
@@ -108,9 +110,23 @@ public class FollowService {
             }
 
             loggedUser.unfollowUser(unfollowUser);
+            userService.save(loggedUser);
 
             return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(loggedUser));
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
+    }
+
+    private boolean existsById(Long id) {
+        return followRequestRepository.existsById(id);
+    }
+
+    private FollowRequest getReferenceById(Long id){
+        return followRequestRepository.getReferenceById(id);
+    }
+
+    @Transactional
+    private void save(FollowRequest followRequest){
+        followRequestRepository.save(followRequest);
     }
 }
