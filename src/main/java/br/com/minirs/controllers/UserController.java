@@ -7,7 +7,6 @@ import br.com.minirs.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -38,31 +37,26 @@ public class UserController {
     }
 
     @PostMapping
-    @Transactional
     public ResponseEntity<?> createUser(@RequestBody @Valid DtoCreateUser data) {
         return userService.createUser(data);
     }
 
     @PostMapping("/login")
-    @Transactional
     public ResponseEntity<?> loginUser(@RequestBody @Valid DtoLoginUser data){
         return userService.loginUser(data);
     }
 
     @PutMapping
-    @Transactional
     public ResponseEntity<?> updateUser(@RequestBody @Valid DtoUpdateUser data){
         return userService.updateUser(data);
     }
 
     @DeleteMapping("/{id}")
-    @Transactional
     public ResponseEntity<?> deleteUser(@PathVariable Long id){
         return userService.deleteUser(id);
     }
 
     @DeleteMapping("/enable/{id}")
-    @Transactional
     public ResponseEntity<?> enableUser(@PathVariable Long id){
         return userService.enableUser(id);
     }

@@ -23,56 +23,47 @@ public class UserService {
 
     @Transactional
     public ResponseEntity<?> createUser(DtoCreateUser data) {
-        if (userRepository.findByEmail(data.email()) != null){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Email already registered.");
-        }
 
-        if (userRepository.findByUserName(data.userName()) != null){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: There is already a user with this username.");
-        }
+        validateUniqueUserFields(data.email(), data.userName());
 
         var newUser = new User(data);
-        userRepository.save(newUser);
+        this.save(newUser);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new DtoReturnUser(newUser));
     }
 
     @Transactional
     public ResponseEntity<?> loginUser(DtoLoginUser data) {
-        var user = userRepository.findByEmail(data.email());
+        var user = this.findByEmail(data.email());
 
         if (user == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ERROR: Email or Password incorrect.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ERROR: Invalid Credentials.");
         }
 
         if (!user.getActive()){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("ERROR: User disabled.");
         }
 
         if (user.getPassword().equals(data.password())){
 
             return ResponseEntity.status(HttpStatus.CREATED).body(new DtoReturnUser(user));
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ERROR: Email or Password incorrect.");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ERROR: Invalid Credentials.");
     }
 
     @Transactional
     public ResponseEntity<?> updateUser(DtoUpdateUser data) {
-        if (userRepository.existsById(data.id())) {
-            var user = userRepository.getReferenceById(data.id());
+        if (this.existsById(data.id())) {
+            var user = this.getReferenceById(data.id());
 
             if (!user.getActive()){
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
             }
 
-            if (userRepository.findByEmail(data.email()) != null){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Email already registered.");
-            }
-            if (userRepository.findByUserName(data.userName()) != null){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: There is already a user with this username.");
-            }
+            validateUniqueUserFields(data.email(), data.userName());
 
             user.updateData(data);
+            this.save(user);
 
             return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
         }
@@ -81,12 +72,14 @@ public class UserService {
 
     @Transactional
     public ResponseEntity<?> deleteUser(Long id) {
-        if (userRepository.existsById(id)){
-            var user = userRepository.getReferenceById(id);
+        if (this.existsById(id)){
+            var user = this.getReferenceById(id);
+
             if (user.getActive()){
                 user.setActive(false);
+                this.save(user);
 
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new DtoReturnUser(user));
+                return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
             }
             return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already disabled.");
         }
@@ -95,25 +88,27 @@ public class UserService {
 
     @Transactional
     public ResponseEntity<?> enableUser(Long id) {
-        if (userRepository.existsById(id)){
-            var user = userRepository.getReferenceById(id);
+        if (this.existsById(id)){
+            var user = this.getReferenceById(id);
+
             if (!user.getActive()){
                 user.setActive(true);
+                this.save(user);
 
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new DtoReturnUser(user));
+                return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
             }
             return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already enabled.");
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getFollowersList(Long id) {
-        if (userRepository.existsById(id)){
-            var user = userRepository.getReferenceById(id);
+        if (this.existsById(id)){
+            var user = this.getReferenceById(id);
 
             if (!user.getActive()){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("ERROR: User disabled.");
             }
 
             var followingList = user.getFollowers().stream().map(User::getUserName).collect(Collectors.toList());
@@ -123,13 +118,13 @@ public class UserService {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getFollowingList(Long id) {
-        if (userRepository.existsById(id)){
-            var user = userRepository.getReferenceById(id);
+        if (this.existsById(id)){
+            var user = this.getReferenceById(id);
 
             if (!user.getActive()){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("ERROR: User disabled.");
             }
 
             var followingList = user.getFollowing().stream().map(User::getUserName).collect(Collectors.toList());
@@ -139,7 +134,7 @@ public class UserService {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getAllUsers() {
         List<DtoReturnUser> users = userRepository.findActiveUsers().stream()
                 .map(DtoReturnUser::new)
@@ -147,10 +142,10 @@ public class UserService {
         return ResponseEntity.status(HttpStatus.OK).body(users);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getUserById(Long id) {
-        if (userRepository.existsById(id)){
-            var user = userRepository.getReferenceById(id);
+        if (this.existsById(id)){
+            var user = this.getReferenceById(id);
 
             if (!user.getActive()){
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
@@ -159,5 +154,36 @@ public class UserService {
             return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
+    }
+
+    public Boolean existsById(Long id){
+        return userRepository.existsById(id);
+    }
+
+    public User getReferenceById(Long id){
+        return userRepository.getReferenceById(id);
+    }
+
+    @Transactional
+    public void save(User user){
+        userRepository.save(user);
+    }
+
+    private User findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    private User findByUserName(String username) {
+        return userRepository.findByUserName(username);
+    }
+
+    private void validateUniqueUserFields(String email, String username){
+        if (this.findByEmail(email) != null){
+            ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Email already registered.");
+        }
+
+        if (this.findByUserName(username) != null){
+            ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: There is already a user with this username.");
+        }
     }
 }
