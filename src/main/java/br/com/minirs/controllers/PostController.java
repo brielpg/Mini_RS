@@ -7,7 +7,6 @@ import br.com.minirs.services.PostService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,61 +17,51 @@ public class PostController {
     private PostService postService;
 
     @GetMapping("/{id}")
-    @Transactional
     public ResponseEntity<?> getPostById(@PathVariable Long id){
         return postService.getPostById(id);
     }
 
     @GetMapping("/user/{userId}")
-    @Transactional
     public ResponseEntity<?> getPostsByUser(@PathVariable Long userId){
         return postService.getPostsByUser(userId);
     }
 
     @GetMapping("/feed/{userId}")
-    @Transactional
     public ResponseEntity<?> getFollowingUsersPosts(@PathVariable Long userId){
         return postService.getFollowingUsersPosts(userId);
     }
 
     @GetMapping("/feed")
-    @Transactional
     public ResponseEntity<?> getPublicFeed(){
         return postService.getPublicFeed();
     }
 
     @PostMapping
-    @Transactional
     public ResponseEntity<?> createPost(@RequestBody @Valid DtoCreatePost data){
         return postService.createPost(data);
     }
 
     @PutMapping
-    @Transactional
     public ResponseEntity<?> updatePost(@RequestBody @Valid DtoUpdatePost data){
         return postService.updatePost(data);
     }
 
     @DeleteMapping("/{postId}/{userId}")
-    @Transactional
     public ResponseEntity<?> deletePost(@PathVariable Long postId, @PathVariable Long userId){
         return postService.deletePost(postId, userId);
     }
 
     @DeleteMapping("/reactivate/{postId}/{userId}")
-    @Transactional
     public ResponseEntity<?> reactivatePost(@PathVariable Long postId, @PathVariable Long userId){
         return postService.reactivatePost(postId, userId);
     }
 
     @PostMapping("/like")
-    @Transactional
     public ResponseEntity<?> likePost(@RequestBody @Valid DtoLike data){
         return postService.likePost(data);
     }
 
     @DeleteMapping("/dislike")
-    @Transactional
     public ResponseEntity<?> dislikePost(@RequestBody @Valid DtoLike data){
         return postService.dislikePost(data);
     }
