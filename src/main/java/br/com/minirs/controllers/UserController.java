@@ -41,11 +41,6 @@ public class UserController {
         return userService.createUser(data);
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody @Valid DtoLoginUser data){
-        return userService.loginUser(data);
-    }
-
     @PutMapping
     public ResponseEntity<?> updateUser(@RequestBody @Valid DtoUpdateUser data){
         return userService.updateUser(data);
