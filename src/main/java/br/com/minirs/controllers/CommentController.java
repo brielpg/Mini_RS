@@ -1,6 +1,7 @@
 package br.com.minirs.controllers;
 
 import br.com.minirs.dto.reactions.DtoCreateComment;
+import br.com.minirs.dto.reactions.DtoReturnComment;
 import br.com.minirs.dto.reactions.DtoUpdateComment;
 import br.com.minirs.services.CommentService;
 import jakarta.validation.Valid;
@@ -16,28 +17,33 @@ public class CommentController {
     private CommentService commentService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getCommentById(@PathVariable Long id){
-        return commentService.getCommentById(id);
+    public ResponseEntity<DtoReturnComment> getCommentById(@PathVariable Long id){
+        var comment = commentService.getCommentById(id);
+        return ResponseEntity.ok(comment);
     }
 
     @PostMapping
-    public ResponseEntity<?> createComment(@RequestBody @Valid DtoCreateComment data){
-        return commentService.createComment(data);
+    public ResponseEntity<DtoReturnComment> createComment(@RequestBody @Valid DtoCreateComment data){
+        var comment = commentService.createComment(data);
+        return ResponseEntity.ok(comment);
     }
 
     @PutMapping
-    public ResponseEntity<?> updateComment(@RequestBody @Valid DtoUpdateComment data){
-        return commentService.updateComment(data);
+    public ResponseEntity<DtoReturnComment> updateComment(@RequestBody @Valid DtoUpdateComment data){
+        var comment = commentService.updateComment(data);
+        return ResponseEntity.ok(comment);
     }
 
     @DeleteMapping("/{commentId}/{userId}")
-    public ResponseEntity<?> deleteComment(@PathVariable Long commentId, @PathVariable Long userId){
-        return commentService.deleteComment(commentId, userId);
+    public ResponseEntity<DtoReturnComment> deleteComment(@PathVariable Long commentId, @PathVariable Long userId){
+        var comment = commentService.deleteComment(commentId, userId);
+        return ResponseEntity.ok(comment);
     }
 
     @DeleteMapping("/reactive/{commentId}/{userId}")
-    public ResponseEntity<?> reactiveComment(@PathVariable Long commentId, @PathVariable Long userId){
-        return commentService.reactiveComment(commentId, userId);
+    public ResponseEntity<DtoReturnComment> reactiveComment(@PathVariable Long commentId, @PathVariable Long userId){
+        var comment = commentService.reactiveComment(commentId, userId);
+        return ResponseEntity.ok(comment);
     }
 }
 

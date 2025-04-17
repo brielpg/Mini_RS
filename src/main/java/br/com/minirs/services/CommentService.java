@@ -13,8 +13,6 @@ import br.com.minirs.exceptions.comment.CommentNotFoundException;
 import br.com.minirs.exceptions.follow.ActionNotAllowedException;
 import br.com.minirs.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +29,7 @@ public class CommentService {
     private PostService postService;
 
     @Transactional
-    public ResponseEntity<?> createComment(DtoCreateComment data) {
+    public DtoReturnComment createComment(DtoCreateComment data) {
         userService.validateUserExistsById(data.userId());
         postService.validatePostExistsById(data.postId());
 
@@ -43,11 +41,11 @@ public class CommentService {
         var comment = new Comments(user, post, data.content());
         this.save(comment);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
+        return new DtoReturnComment(comment);
     }
 
     @Transactional
-    public ResponseEntity<?> deleteComment(Long commentId, Long userId) {
+    public DtoReturnComment deleteComment(Long commentId, Long userId) {
         validateCommentExistsById(commentId);
 
         var comment = this.getReferenceById(commentId);
@@ -59,11 +57,11 @@ public class CommentService {
         comment.setActive(false);
         this.save(comment);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
+        return new DtoReturnComment(comment);
     }
 
     @Transactional
-    public ResponseEntity<?> reactiveComment(Long commentId, Long userId) {
+    public DtoReturnComment reactiveComment(Long commentId, Long userId) {
         validateCommentExistsById(commentId);
 
         var comment = this.getReferenceById(commentId);
@@ -75,11 +73,11 @@ public class CommentService {
         comment.setActive(true);
         this.save(comment);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
+        return new DtoReturnComment(comment);
     }
 
     @Transactional
-    public ResponseEntity<?> updateComment(DtoUpdateComment data) {
+    public DtoReturnComment updateComment(DtoUpdateComment data) {
         validateCommentExistsById(data.commentId());
 
         var comment = this.getReferenceById(data.commentId());
@@ -91,18 +89,18 @@ public class CommentService {
         comment.updateComment(data.content());
         this.save(comment);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
+        return new DtoReturnComment(comment);
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<?> getCommentById(Long id) {
+    public DtoReturnComment getCommentById(Long id) {
         validateCommentExistsById(id);
 
         var comment = this.getReferenceById(id);
 
         validateCommentActive(comment);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
+        return new DtoReturnComment(comment);
     }
 
     private void validateCommentExistsById(Long commentId) {
