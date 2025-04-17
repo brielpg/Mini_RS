@@ -4,6 +4,11 @@ import br.com.minirs.dto.follow.DtoReturnFollowRequest;
 import br.com.minirs.dto.user.DtoReturnUser;
 import br.com.minirs.entities.FollowRequest;
 import br.com.minirs.entities.PrivacyStatusEnum;
+import br.com.minirs.entities.User;
+import br.com.minirs.exceptions.follow.ActionNotAllowedException;
+import br.com.minirs.exceptions.follow.FollowRequestDisabledException;
+import br.com.minirs.exceptions.follow.FollowRequestNotFoundException;
+import br.com.minirs.exceptions.follow.InvalidFollowRequestException;
 import br.com.minirs.repositories.FollowRequestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,111 +27,127 @@ public class FollowService {
 
     @Transactional
     public ResponseEntity<?> acceptFollowRequest(Long requestId, Long requestedUserId) {
-        if (this.existsById(requestId) && userService.existsById(requestedUserId)){
-            var followRequest = this.getReferenceById(requestId);
-            var requested = userService.getReferenceById(requestedUserId);
+        userService.validateUserExistsById(requestedUserId);
+        validateFollowRequestExistsById(requestId);
 
-            if(followRequest.getRequested().equals(requested) && followRequest.getActive()){
-                followRequest.acceptRequest();
-                this.save(followRequest);
+        var followRequest = this.getReferenceById(requestId);
+        var requested = userService.getReferenceById(requestedUserId);
 
-                return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(followRequest.getRequester()));
-            }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User cannot accept the follow request.");
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User or Follow Request not found.");
+        validateFollowRequestActive(followRequest);
+        validateRequest(followRequest, requested);
+
+        followRequest.acceptRequest();
+        this.save(followRequest);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(followRequest.getRequester()));
     }
 
     @Transactional
     public ResponseEntity<?> denyFollowRequest(Long requestId, Long requestedUserId) {
-        if (this.existsById(requestId) && userService.existsById(requestedUserId)){
-            var followRequest = this.getReferenceById(requestId);
-            var requested = userService.getReferenceById(requestedUserId);
+        userService.validateUserExistsById(requestedUserId);
+        validateFollowRequestExistsById(requestId);
 
-            if(followRequest.getRequested().equals(requested) && followRequest.getActive()){
-                followRequest.denyRequest();
-                this.save(followRequest);
+        var followRequest = this.getReferenceById(requestId);
+        var requested = userService.getReferenceById(requestedUserId);
 
-                return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(followRequest.getRequester()));
-            }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User cannot deny the follow request.");
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User or Follow Request not found.");
+        validateFollowRequestActive(followRequest);
+        validateRequest(followRequest, requested);
+
+        followRequest.denyRequest();
+        this.save(followRequest);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(followRequest.getRequester()));
     }
 
     @Transactional
     public ResponseEntity<?> followUser(Long loggedUserId, Long followUserId) {
-        if (userService.existsById(loggedUserId) && userService.existsById(followUserId)){
+        userService.validateUserExistsById(loggedUserId);
+        userService.validateUserExistsById(followUserId);
 
-            if (loggedUserId.equals(followUserId)){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User can't follow himself");
+        validateFollowAction(loggedUserId, followUserId, true);
+
+        var loggedUser = userService.getReferenceById(loggedUserId);
+        var followUser = userService.getReferenceById(followUserId);
+
+        if (followUser.getProfilePrivacyStatus().equals(PrivacyStatusEnum.PRIVATE)) {
+            if (followRequestRepository.existsActiveFollowRequest(loggedUser.getId(), followUser.getId())) {
+                throw new InvalidFollowRequestException("A follow request has already been submitted.");
             }
-
-            var loggedUser = userService.getReferenceById(loggedUserId);
-            var followUser = userService.getReferenceById(followUserId);
-
-            if (loggedUser.getFollowing().contains(followUser)){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already following another user.");
-            }
-
-            if (!loggedUser.getActive() || !followUser.getActive()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: One of the users is inactive.");
-            }
-
-            if (followUser.getProfilePrivacyStatus().equals(PrivacyStatusEnum.PRIVATE)){
-                if (followRequestRepository.existsActiveFollowRequest(loggedUser.getId(), followUser.getId())){
-                    return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: A follow request has already been submitted.");
-                }
-                var followRequest = new FollowRequest(loggedUser, followUser);
-                this.save(followRequest);
-                return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnFollowRequest(followRequest));
-            }
-
-            loggedUser.followUser(followUser);
-            userService.save(loggedUser);
-
-            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(loggedUser));
+            var followRequest = new FollowRequest(loggedUser, followUser);
+            this.save(followRequest);
+            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnFollowRequest(followRequest));
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
+
+        loggedUser.followUser(followUser);
+        userService.save(loggedUser);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(loggedUser));
     }
 
     @Transactional
     public ResponseEntity<?> unfollowUser(Long loggedUserId, Long followUserId) {
-        if (userService.existsById(loggedUserId) && userService.existsById(followUserId)){
+        userService.validateUserExistsById(loggedUserId);
+        userService.validateUserExistsById(followUserId);
 
-            if (loggedUserId.equals(followUserId)){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User can't unfollow himself");
-            }
+        validateFollowAction(loggedUserId, followUserId, false);
 
-            var loggedUser = userService.getReferenceById(loggedUserId);
-            var unfollowUser = userService.getReferenceById(followUserId);
+        var loggedUser = userService.getReferenceById(loggedUserId);
+        var unfollowUser = userService.getReferenceById(followUserId);
 
-            if (!loggedUser.getFollowing().contains(unfollowUser)){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not following another user.");
-            }
+        loggedUser.unfollowUser(unfollowUser);
+        userService.save(loggedUser);
 
-            if (!loggedUser.getActive() || !unfollowUser.getActive()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: One of the users is inactive.");
-            }
-
-            loggedUser.unfollowUser(unfollowUser);
-            userService.save(loggedUser);
-
-            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(loggedUser));
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(loggedUser));
     }
 
     private boolean existsById(Long id) {
         return followRequestRepository.existsById(id);
     }
 
-    private FollowRequest getReferenceById(Long id){
+    private void validateFollowRequestExistsById(Long id) {
+        if (!followRequestRepository.existsById(id)) {
+            throw new FollowRequestNotFoundException(id);
+        }
+    }
+
+    private void validateFollowRequestActive(FollowRequest followRequest) {
+        if (!followRequest.getActive()) {
+            throw new FollowRequestDisabledException();
+        }
+    }
+
+    private void validateRequest(FollowRequest followRequest, User requested) {
+        if (!followRequest.getRequested().equals(requested)) {
+            throw new InvalidFollowRequestException("User cannot process the follow request.");
+        }
+    }
+
+    private void validateFollowAction(Long loggedUserId, Long targetUserId, boolean isFollowAction) {
+        if (loggedUserId.equals(targetUserId)) {
+            throw new ActionNotAllowedException("User can't perform action on himself.");
+        }
+
+        var loggedUser = userService.getReferenceById(loggedUserId);
+        var targetUser = userService.getReferenceById(targetUserId);
+
+        userService.validateUserActive(loggedUser);
+        userService.validateUserActive(targetUser);
+
+        if (isFollowAction && loggedUser.getFollowing().contains(targetUser)) {
+            throw new InvalidFollowRequestException("User is already following another user.");
+        }
+
+        if (!isFollowAction && !loggedUser.getFollowing().contains(targetUser)) {
+            throw new InvalidFollowRequestException("User is not following another user.");
+        }
+    }
+
+    private FollowRequest getReferenceById(Long id) {
         return followRequestRepository.getReferenceById(id);
     }
 
     @Transactional
-    private void save(FollowRequest followRequest){
+    private void save(FollowRequest followRequest) {
         followRequestRepository.save(followRequest);
     }
 }
