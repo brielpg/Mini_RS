@@ -1,21 +1,18 @@
 package br.com.minirs.infra;
 
 import br.com.minirs.dto.ExceptionDto;
+import br.com.minirs.exceptions.NotFoundException;
 import br.com.minirs.exceptions.comment.CommentAlreadyActiveException;
 import br.com.minirs.exceptions.comment.CommentDeletedException;
-import br.com.minirs.exceptions.comment.CommentNotFoundException;
 import br.com.minirs.exceptions.follow.ActionNotAllowedException;
 import br.com.minirs.exceptions.follow.FollowRequestDisabledException;
-import br.com.minirs.exceptions.follow.FollowRequestNotFoundException;
 import br.com.minirs.exceptions.follow.InvalidFollowRequestException;
 import br.com.minirs.exceptions.post.LikedPostsException;
 import br.com.minirs.exceptions.post.PostDeletedException;
-import br.com.minirs.exceptions.post.PostNotFoundException;
 import br.com.minirs.exceptions.post.UnauthorizedUserException;
 import br.com.minirs.exceptions.user.EmailAlreadyRegisteredException;
 import br.com.minirs.exceptions.user.UserDisabledException;
 import br.com.minirs.exceptions.user.UserNameAlreadyRegisteredException;
-import br.com.minirs.exceptions.user.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -24,12 +21,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-
-    @ExceptionHandler(CommentNotFoundException.class)
-    public ResponseEntity<?> handleCommentNotFoundException(CommentNotFoundException ex) {
-        var dto = new ExceptionDto(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND, ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
-    }
 
     @ExceptionHandler(CommentDeletedException.class)
     public ResponseEntity<?> handleCommentDeletedException(CommentDeletedException ex) {
@@ -92,21 +83,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<?> handleUserNotFoundException(UserNotFoundException ex) {
-        var dto = new ExceptionDto(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND, ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
-    }
-
-    @ExceptionHandler(FollowRequestNotFoundException.class)
-    public ResponseEntity<?> handleFollowRequestNotFoundException(FollowRequestNotFoundException ex) {
-        var dto = new ExceptionDto(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND, ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
-    }
-
-    @ExceptionHandler(PostNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ResponseEntity<ExceptionDto> handlePostNotFoundException(PostNotFoundException ex) {
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<?> handleNotFoundException(NotFoundException ex) {
         var dto = new ExceptionDto(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND, ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
     }

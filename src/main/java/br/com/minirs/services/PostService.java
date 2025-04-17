@@ -6,9 +6,9 @@ import br.com.minirs.dto.post.DtoUpdatePost;
 import br.com.minirs.dto.reactions.DtoLike;
 import br.com.minirs.entities.Post;
 import br.com.minirs.entities.User;
+import br.com.minirs.exceptions.NotFoundException;
 import br.com.minirs.exceptions.post.LikedPostsException;
 import br.com.minirs.exceptions.post.PostDeletedException;
-import br.com.minirs.exceptions.post.PostNotFoundException;
 import br.com.minirs.exceptions.post.UnauthorizedUserException;
 import br.com.minirs.repositories.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -189,7 +189,7 @@ public class PostService {
 
     public void validatePostExistsById(Long id) {
         if (!postRepository.existsById(id)) {
-            throw new PostNotFoundException(id);
+            throw new NotFoundException("Post", id);
         }
     }
 

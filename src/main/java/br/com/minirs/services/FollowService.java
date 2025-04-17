@@ -3,11 +3,11 @@ package br.com.minirs.services;
 import br.com.minirs.dto.follow.DtoReturnFollowRequest;
 import br.com.minirs.dto.user.DtoReturnUser;
 import br.com.minirs.entities.FollowRequest;
-import br.com.minirs.enums.PrivacyStatusEnum;
 import br.com.minirs.entities.User;
+import br.com.minirs.enums.PrivacyStatusEnum;
+import br.com.minirs.exceptions.NotFoundException;
 import br.com.minirs.exceptions.follow.ActionNotAllowedException;
 import br.com.minirs.exceptions.follow.FollowRequestDisabledException;
-import br.com.minirs.exceptions.follow.FollowRequestNotFoundException;
 import br.com.minirs.exceptions.follow.InvalidFollowRequestException;
 import br.com.minirs.repositories.FollowRequestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,7 +100,7 @@ public class FollowService {
 
     private void validateFollowRequestExistsById(Long id) {
         if (!followRequestRepository.existsById(id)) {
-            throw new FollowRequestNotFoundException(id);
+            throw new NotFoundException("Follow Request", id);
         }
     }
 

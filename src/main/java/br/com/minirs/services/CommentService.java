@@ -5,11 +5,11 @@ import br.com.minirs.dto.reactions.DtoReturnComment;
 import br.com.minirs.dto.reactions.DtoUpdateComment;
 import br.com.minirs.entities.Comments;
 import br.com.minirs.entities.Post;
-import br.com.minirs.enums.PrivacyStatusEnum;
 import br.com.minirs.entities.User;
+import br.com.minirs.enums.PrivacyStatusEnum;
+import br.com.minirs.exceptions.NotFoundException;
 import br.com.minirs.exceptions.comment.CommentAlreadyActiveException;
 import br.com.minirs.exceptions.comment.CommentDeletedException;
-import br.com.minirs.exceptions.comment.CommentNotFoundException;
 import br.com.minirs.exceptions.follow.ActionNotAllowedException;
 import br.com.minirs.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,7 +105,7 @@ public class CommentService {
 
     private void validateCommentExistsById(Long commentId) {
         if (!commentRepository.existsById(commentId)) {
-            throw new CommentNotFoundException(commentId);
+            throw new NotFoundException("Comment", commentId);
         }
     }
 
