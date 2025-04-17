@@ -12,7 +12,6 @@ import br.com.minirs.exceptions.post.PostNotFoundException;
 import br.com.minirs.exceptions.post.UnauthorizedUserException;
 import br.com.minirs.repositories.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -204,10 +203,6 @@ public class PostService {
         if (!post.getActive()) {
             throw new PostDeletedException();
         }
-    }
-
-    public boolean existsById(Long id) {
-        return postRepository.existsById(id);
     }
 
     public Post getReferenceById(Long id) {

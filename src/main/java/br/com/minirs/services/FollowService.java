@@ -98,10 +98,6 @@ public class FollowService {
         return new DtoReturnUser(loggedUser);
     }
 
-    private boolean existsById(Long id) {
-        return followRequestRepository.existsById(id);
-    }
-
     private void validateFollowRequestExistsById(Long id) {
         if (!followRequestRepository.existsById(id)) {
             throw new FollowRequestNotFoundException(id);

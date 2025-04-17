@@ -139,10 +139,6 @@ public class CommentService {
         commentRepository.save(comment);
     }
 
-    private boolean existsById(Long id) {
-        return commentRepository.existsById(id);
-    }
-
     private Comments getReferenceById(Long id) {
         return commentRepository.getReferenceById(id);
     }

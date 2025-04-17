@@ -154,10 +154,6 @@ public class UserService {
         return userRepository.findByUserName(username);
     }
 
-    public Boolean existsById(Long id) {
-        return userRepository.existsById(id);
-    }
-
     public User getReferenceById(Long id) {
         return userRepository.getReferenceById(id);
     }
