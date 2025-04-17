@@ -135,7 +135,7 @@ public class UserService {
         }
     }
 
-    private void validateUserActive(User user) {
+    public void validateUserActive(User user) {
         if (!user.getActive()) {
             throw new UserDisabledException();
         }
