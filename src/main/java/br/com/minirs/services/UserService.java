@@ -1,7 +1,6 @@
 package br.com.minirs.services;
 
 import br.com.minirs.dto.user.DtoCreateUser;
-import br.com.minirs.dto.user.DtoLoginUser;
 import br.com.minirs.dto.user.DtoReturnUser;
 import br.com.minirs.dto.user.DtoUpdateUser;
 import br.com.minirs.entities.User;
@@ -11,13 +10,10 @@ import br.com.minirs.exceptions.user.UserNameAlreadyRegisteredException;
 import br.com.minirs.exceptions.user.UserNotFoundException;
 import br.com.minirs.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -26,17 +22,17 @@ public class UserService {
     private UserRepository userRepository;
 
     @Transactional
-    public ResponseEntity<?> createUser(DtoCreateUser data) {
+    public DtoReturnUser createUser(DtoCreateUser data) {
         validateEmailAndUsername(data.email(), data.userName());
 
         var newUser = new User(data);
         this.save(newUser);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(new DtoReturnUser(newUser));
+        return new DtoReturnUser(newUser);
     }
 
     @Transactional
-    public ResponseEntity<?> updateUser(DtoUpdateUser data) {
+    public DtoReturnUser updateUser(DtoUpdateUser data) {
         validateUserExistsById(data.id());
 
         var user = this.getReferenceById(data.id());
@@ -47,86 +43,80 @@ public class UserService {
         user.updateData(data);
         this.save(user);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
+        return new DtoReturnUser(user);
     }
 
     @Transactional
-    public ResponseEntity<?> deleteUser(Long id) {
+    public DtoReturnUser disableUser(Long id) {
         validateUserExistsById(id);
 
         var user = this.getReferenceById(id);
 
-        if (user.getActive()) {
-            user.setActive(false);
-            this.save(user);
+        if (!user.getActive()) throw new UserDisabledException("User is already disabled");
 
-            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
-        }
-        return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already disabled.");
+        user.setActive(false);
+        this.save(user);
+
+        return new DtoReturnUser(user);
+
     }
 
     @Transactional
-    public ResponseEntity<?> enableUser(Long id) {
+    public DtoReturnUser enableUser(Long id) {
         validateUserExistsById(id);
 
         var user = this.getReferenceById(id);
 
-        if (!user.getActive()) {
-            user.setActive(true);
-            this.save(user);
+        if (user.getActive()) throw new UserDisabledException("User is already enabled");
 
-            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
-        }
-        return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already enabled.");
+        user.setActive(true);
+        this.save(user);
+
+        return new DtoReturnUser(user);
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<?> getFollowersList(Long id) {
+    public List<String> getFollowersList(Long id) {
         validateUserExistsById(id);
 
         var user = this.getReferenceById(id);
 
         validateUserActive(user);
 
-        var followingList = user.getFollowers().stream()
+        return user.getFollowers().stream()
                 .map(User::getUserName)
                 .toList();
-
-        return ResponseEntity.status(HttpStatus.OK).body(followingList);
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<?> getFollowingList(Long id) {
+    public List<String> getFollowingList(Long id) {
         validateUserExistsById(id);
 
         var user = this.getReferenceById(id);
 
         validateUserActive(user);
 
-        var followingList = user.getFollowing().stream()
+        return user.getFollowing().stream()
                 .map(User::getUserName)
                 .toList();
-
-        return ResponseEntity.status(HttpStatus.OK).body(followingList);
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<?> getAllUsers() {
-        List<DtoReturnUser> users = userRepository.findActiveUsers().stream()
+    public List<DtoReturnUser> getAllUsers() {
+        return userRepository.findActiveUsers().stream()
                 .map(DtoReturnUser::new)
                 .toList();
-        return ResponseEntity.status(HttpStatus.OK).body(users);
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<?> getUserById(Long id) {
+    public DtoReturnUser getUserById(Long id) {
         validateUserExistsById(id);
 
         var user = this.getReferenceById(id);
 
         this.validateUserActive(user);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
+        return new DtoReturnUser(user);
     }
 
     public void validateUserExistsById(Long id) {
