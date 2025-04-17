@@ -10,7 +10,7 @@ import br.com.minirs.enums.PrivacyStatusEnum;
 import br.com.minirs.exceptions.NotFoundException;
 import br.com.minirs.exceptions.comment.CommentAlreadyActiveException;
 import br.com.minirs.exceptions.comment.CommentDeletedException;
-import br.com.minirs.exceptions.follow.ActionNotAllowedException;
+import br.com.minirs.exceptions.UnauthorizedException;
 import br.com.minirs.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -111,7 +111,7 @@ public class CommentService {
 
     private void validateUserPermission(Comments comment, User user) {
         if (!comment.getUser().equals(user)) {
-            throw new ActionNotAllowedException("User is not allowed to perform this action on the comment.");
+            throw new UnauthorizedException("User is not allowed to perform this action on the comment.");
         }
     }
 
@@ -130,7 +130,7 @@ public class CommentService {
     private void validateUserCanCommentOnPost(User user, Post post) {
         if (!user.getFollowing().contains(post.getPostOwner()) &&
                 post.getPostOwner().getProfilePrivacyStatus().equals(PrivacyStatusEnum.PRIVATE)) {
-            throw new ActionNotAllowedException("User is not following the post owner.");
+            throw new UnauthorizedException("User is not following the post owner.");
         }
     }
 

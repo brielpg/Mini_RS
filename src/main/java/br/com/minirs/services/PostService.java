@@ -9,7 +9,7 @@ import br.com.minirs.entities.User;
 import br.com.minirs.exceptions.NotFoundException;
 import br.com.minirs.exceptions.post.LikedPostsException;
 import br.com.minirs.exceptions.post.PostDeletedException;
-import br.com.minirs.exceptions.post.UnauthorizedUserException;
+import br.com.minirs.exceptions.UnauthorizedException;
 import br.com.minirs.repositories.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -195,7 +195,7 @@ public class PostService {
 
     private void validatePostOwner(Post post, User user, String message){
         if (post.getPostOwner() != user){
-            throw new UnauthorizedUserException(message);
+            throw new UnauthorizedException(message);
         }
     }
 

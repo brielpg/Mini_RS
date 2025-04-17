@@ -6,9 +6,9 @@ import br.com.minirs.entities.FollowRequest;
 import br.com.minirs.entities.User;
 import br.com.minirs.enums.PrivacyStatusEnum;
 import br.com.minirs.exceptions.NotFoundException;
-import br.com.minirs.exceptions.follow.ActionNotAllowedException;
 import br.com.minirs.exceptions.follow.FollowRequestDisabledException;
 import br.com.minirs.exceptions.follow.InvalidFollowRequestException;
+import br.com.minirs.exceptions.UnauthorizedException;
 import br.com.minirs.repositories.FollowRequestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -118,7 +118,7 @@ public class FollowService {
 
     private void validateFollowAction(Long loggedUserId, Long targetUserId, boolean isFollowAction) {
         if (loggedUserId.equals(targetUserId)) {
-            throw new ActionNotAllowedException("User can't perform action on himself.");
+            throw new UnauthorizedException("User can't perform action on himself.");
         }
 
         var loggedUser = userService.getReferenceById(loggedUserId);

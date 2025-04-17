@@ -4,13 +4,12 @@ import br.com.minirs.dto.ExceptionDto;
 import br.com.minirs.exceptions.NotFoundException;
 import br.com.minirs.exceptions.comment.CommentAlreadyActiveException;
 import br.com.minirs.exceptions.comment.CommentDeletedException;
-import br.com.minirs.exceptions.follow.ActionNotAllowedException;
 import br.com.minirs.exceptions.follow.FollowRequestDisabledException;
 import br.com.minirs.exceptions.follow.InvalidFollowRequestException;
 import br.com.minirs.exceptions.post.LikedPostsException;
 import br.com.minirs.exceptions.post.PostDeletedException;
-import br.com.minirs.exceptions.post.UnauthorizedUserException;
 import br.com.minirs.exceptions.user.EmailAlreadyRegisteredException;
+import br.com.minirs.exceptions.UnauthorizedException;
 import br.com.minirs.exceptions.user.UserDisabledException;
 import br.com.minirs.exceptions.user.UserNameAlreadyRegisteredException;
 import org.springframework.http.HttpStatus;
@@ -34,16 +33,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
     }
 
-    @ExceptionHandler(UnauthorizedUserException.class)
+    @ExceptionHandler(UnauthorizedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ResponseEntity<ExceptionDto> handleUnauthorizedUserException(UnauthorizedUserException ex) {
-        var dto = new ExceptionDto(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED, ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(dto);
-    }
-
-    @ExceptionHandler(ActionNotAllowedException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ResponseEntity<ExceptionDto> handleActionNotAllowedException(ActionNotAllowedException ex) {
+    public ResponseEntity<ExceptionDto> handleUnauthorizedException(UnauthorizedException ex) {
         var dto = new ExceptionDto(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED, ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(dto);
     }
