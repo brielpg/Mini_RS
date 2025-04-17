@@ -5,6 +5,10 @@ import br.com.minirs.dto.user.DtoLoginUser;
 import br.com.minirs.dto.user.DtoReturnUser;
 import br.com.minirs.dto.user.DtoUpdateUser;
 import br.com.minirs.entities.User;
+import br.com.minirs.exceptions.user.EmailAlreadyRegisteredException;
+import br.com.minirs.exceptions.user.UserDisabledException;
+import br.com.minirs.exceptions.user.UserNameAlreadyRegisteredException;
+import br.com.minirs.exceptions.user.UserNotFoundException;
 import br.com.minirs.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,9 +27,7 @@ public class UserService {
 
     @Transactional
     public ResponseEntity<?> createUser(DtoCreateUser data) {
-
-        if (this.findByEmail(data.email()) != null) ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Email already registered.");
-        if (this.findByUserName(data.userName()) != null) ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: There is already a user with this username.");
+        validateEmailAndUsername(data.email(), data.userName());
 
         var newUser = new User(data);
         this.save(newUser);
@@ -37,15 +39,13 @@ public class UserService {
     public ResponseEntity<?> loginUser(DtoLoginUser data) {
         var user = this.findByEmail(data.email());
 
-        if (user == null){
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ERROR: Invalid Credentials.");
         }
 
-        if (!user.getActive()){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("ERROR: User disabled.");
-        }
+        this.validateUserActive(user);
 
-        if (user.getPassword().equals(data.password())){
+        if (user.getPassword().equals(data.password())) {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(new DtoReturnUser(user));
         }
@@ -54,86 +54,77 @@ public class UserService {
 
     @Transactional
     public ResponseEntity<?> updateUser(DtoUpdateUser data) {
-        if (this.existsById(data.id())) {
-            var user = this.getReferenceById(data.id());
+        validateUserExistsById(data.id());
 
-            if (!user.getActive()){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
-            }
+        var user = this.getReferenceById(data.id());
 
-            if (this.findByEmail(data.email()) != null) ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Email already registered.");
-            if (this.findByUserName(data.userName()) != null) ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: There is already a user with this username.");
+        validateUserActive(user);
+        validateEmailAndUsername(data.email(), data.userName());
 
-            user.updateData(data);
-            this.save(user);
+        user.updateData(data);
+        this.save(user);
 
-            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
     }
 
     @Transactional
     public ResponseEntity<?> deleteUser(Long id) {
-        if (this.existsById(id)){
-            var user = this.getReferenceById(id);
+        validateUserExistsById(id);
 
-            if (user.getActive()){
-                user.setActive(false);
-                this.save(user);
+        var user = this.getReferenceById(id);
 
-                return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
-            }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already disabled.");
+        if (user.getActive()) {
+            user.setActive(false);
+            this.save(user);
+
+            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already disabled.");
     }
 
     @Transactional
     public ResponseEntity<?> enableUser(Long id) {
-        if (this.existsById(id)){
-            var user = this.getReferenceById(id);
+        validateUserExistsById(id);
 
-            if (!user.getActive()){
-                user.setActive(true);
-                this.save(user);
+        var user = this.getReferenceById(id);
 
-                return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
-            }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already enabled.");
+        if (!user.getActive()) {
+            user.setActive(true);
+            this.save(user);
+
+            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is already enabled.");
     }
 
     @Transactional(readOnly = true)
     public ResponseEntity<?> getFollowersList(Long id) {
-        if (this.existsById(id)){
-            var user = this.getReferenceById(id);
+        validateUserExistsById(id);
 
-            if (!user.getActive()){
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("ERROR: User disabled.");
-            }
+        var user = this.getReferenceById(id);
 
-            var followingList = user.getFollowers().stream().map(User::getUserName).collect(Collectors.toList());
+        validateUserActive(user);
 
-            return ResponseEntity.status(HttpStatus.OK).body(followingList);
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
+        var followingList = user.getFollowers().stream()
+                .map(User::getUserName)
+                .toList();
+
+        return ResponseEntity.status(HttpStatus.OK).body(followingList);
     }
 
     @Transactional(readOnly = true)
     public ResponseEntity<?> getFollowingList(Long id) {
-        if (this.existsById(id)){
-            var user = this.getReferenceById(id);
+        validateUserExistsById(id);
 
-            if (!user.getActive()){
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("ERROR: User disabled.");
-            }
+        var user = this.getReferenceById(id);
 
-            var followingList = user.getFollowing().stream().map(User::getUserName).collect(Collectors.toList());
+        validateUserActive(user);
 
-            return ResponseEntity.status(HttpStatus.OK).body(followingList);
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
+        var followingList = user.getFollowing().stream()
+                .map(User::getUserName)
+                .toList();
+
+        return ResponseEntity.status(HttpStatus.OK).body(followingList);
     }
 
     @Transactional(readOnly = true)
@@ -146,28 +137,39 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public ResponseEntity<?> getUserById(Long id) {
-        if (this.existsById(id)){
-            var user = this.getReferenceById(id);
+        validateUserExistsById(id);
 
-            if (!user.getActive()){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User disabled.");
-            }
+        var user = this.getReferenceById(id);
 
-            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
+        this.validateUserActive(user);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(user));
+    }
+
+    public void validateUserExistsById(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException(id);
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User not found.");
     }
 
-    public Boolean existsById(Long id){
-        return userRepository.existsById(id);
+    private void validateEmailAndUsername(String email, String username) {
+        if (this.findByEmail(email) != null) {
+            throw new EmailAlreadyRegisteredException();
+        }
+
+        if (this.findByUserName(username) != null) {
+            throw new UserNameAlreadyRegisteredException();
+        }
     }
 
-    public User getReferenceById(Long id){
-        return userRepository.getReferenceById(id);
+    private void validateUserActive(User user) {
+        if (!user.getActive()) {
+            throw new UserDisabledException();
+        }
     }
 
     @Transactional
-    public void save(User user){
+    public void save(User user) {
         userRepository.save(user);
     }
 
@@ -177,5 +179,13 @@ public class UserService {
 
     private User findByUserName(String username) {
         return userRepository.findByUserName(username);
+    }
+
+    public Boolean existsById(Long id) {
+        return userRepository.existsById(id);
+    }
+
+    public User getReferenceById(Long id) {
+        return userRepository.getReferenceById(id);
     }
 }
