@@ -1,6 +1,9 @@
 package br.com.minirs.infra;
 
 import br.com.minirs.dto.ExceptionDto;
+import br.com.minirs.exceptions.comment.CommentAlreadyActiveException;
+import br.com.minirs.exceptions.comment.CommentDeletedException;
+import br.com.minirs.exceptions.comment.CommentNotFoundException;
 import br.com.minirs.exceptions.follow.ActionNotAllowedException;
 import br.com.minirs.exceptions.follow.FollowRequestDisabledException;
 import br.com.minirs.exceptions.follow.FollowRequestNotFoundException;
@@ -21,6 +24,24 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<?> handleCommentNotFoundException(CommentNotFoundException ex) {
+        var dto = new ExceptionDto(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
+    }
+
+    @ExceptionHandler(CommentDeletedException.class)
+    public ResponseEntity<?> handleCommentDeletedException(CommentDeletedException ex) {
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
+    }
+
+    @ExceptionHandler(CommentAlreadyActiveException.class)
+    public ResponseEntity<?> handleCommentAlreadyActiveException(CommentAlreadyActiveException ex) {
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
+    }
 
     @ExceptionHandler(UnauthorizedUserException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
