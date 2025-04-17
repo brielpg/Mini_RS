@@ -36,23 +36,6 @@ public class UserService {
     }
 
     @Transactional
-    public ResponseEntity<?> loginUser(DtoLoginUser data) {
-        var user = this.findByEmail(data.email());
-
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ERROR: Invalid Credentials.");
-        }
-
-        this.validateUserActive(user);
-
-        if (user.getPassword().equals(data.password())) {
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(new DtoReturnUser(user));
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ERROR: Invalid Credentials.");
-    }
-
-    @Transactional
     public ResponseEntity<?> updateUser(DtoUpdateUser data) {
         validateUserExistsById(data.id());
 
