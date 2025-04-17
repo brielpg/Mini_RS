@@ -1,13 +1,17 @@
 package br.com.minirs.controllers;
 
 import br.com.minirs.dto.post.DtoCreatePost;
+import br.com.minirs.dto.post.DtoReturnPost;
 import br.com.minirs.dto.post.DtoUpdatePost;
 import br.com.minirs.dto.reactions.DtoLike;
 import br.com.minirs.services.PostService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/post")
@@ -17,52 +21,62 @@ public class PostController {
     private PostService postService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getPostById(@PathVariable Long id){
-        return postService.getPostById(id);
+    public ResponseEntity<DtoReturnPost> getPostById(@PathVariable Long id){
+        var post = postService.getPostById(id);
+        return ResponseEntity.ok(post);
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getPostsByUser(@PathVariable Long userId){
-        return postService.getPostsByUser(userId);
+    public ResponseEntity<List<DtoReturnPost>> getPostsByUser(@PathVariable Long userId){
+        var posts = postService.getPostsByUser(userId);
+        return ResponseEntity.ok(posts);
     }
 
     @GetMapping("/feed/{userId}")
-    public ResponseEntity<?> getFollowingUsersPosts(@PathVariable Long userId){
-        return postService.getFollowingUsersPosts(userId);
+    public ResponseEntity<List<DtoReturnPost>> getFollowingUsersPosts(@PathVariable Long userId){
+        var posts = postService.getFollowingUsersPosts(userId);
+        return ResponseEntity.ok(posts);
     }
 
     @GetMapping("/feed")
-    public ResponseEntity<?> getPublicFeed(){
-        return postService.getPublicFeed();
+    public ResponseEntity<List<DtoReturnPost>> getPublicFeed(){
+        var posts = postService.getPublicFeed();
+        return ResponseEntity.ok(posts);
     }
 
     @PostMapping
-    public ResponseEntity<?> createPost(@RequestBody @Valid DtoCreatePost data){
-        return postService.createPost(data);
+    public ResponseEntity<DtoReturnPost> createPost(@RequestBody @Valid DtoCreatePost data){
+        var post = postService.createPost(data);
+        return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
 
     @PutMapping
-    public ResponseEntity<?> updatePost(@RequestBody @Valid DtoUpdatePost data){
-        return postService.updatePost(data);
+    public ResponseEntity<DtoReturnPost> updatePost(@RequestBody @Valid DtoUpdatePost data){
+        var post = postService.updatePost(data);
+        return ResponseEntity.ok(post);
     }
 
     @DeleteMapping("/{postId}/{userId}")
-    public ResponseEntity<?> deletePost(@PathVariable Long postId, @PathVariable Long userId){
-        return postService.deletePost(postId, userId);
+    public ResponseEntity<DtoReturnPost> deletePost(@PathVariable Long postId, @PathVariable Long userId){
+        var post = postService.deletePost(postId, userId);
+        return ResponseEntity.ok(post);
     }
 
     @DeleteMapping("/reactivate/{postId}/{userId}")
-    public ResponseEntity<?> reactivatePost(@PathVariable Long postId, @PathVariable Long userId){
-        return postService.reactivatePost(postId, userId);
+    public ResponseEntity<DtoReturnPost> reactivatePost(@PathVariable Long postId, @PathVariable Long userId){
+        var post = postService.reactivatePost(postId, userId);
+        return ResponseEntity.ok(post);
     }
 
     @PostMapping("/like")
-    public ResponseEntity<?> likePost(@RequestBody @Valid DtoLike data){
-        return postService.likePost(data);
+    public ResponseEntity<DtoReturnPost> likePost(@RequestBody @Valid DtoLike data){
+        var post = postService.likePost(data);
+        return ResponseEntity.ok(post);
     }
 
     @DeleteMapping("/dislike")
-    public ResponseEntity<?> dislikePost(@RequestBody @Valid DtoLike data){
-        return postService.dislikePost(data);
+    public ResponseEntity<DtoReturnPost> dislikePost(@RequestBody @Valid DtoLike data){
+        var post = postService.dislikePost(data);
+        return ResponseEntity.ok(post);
     }
 }

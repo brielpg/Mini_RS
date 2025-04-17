@@ -13,7 +13,6 @@ import br.com.minirs.exceptions.post.UnauthorizedUserException;
 import br.com.minirs.repositories.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +29,7 @@ public class PostService {
 
 
     @Transactional
-    public ResponseEntity<?> createPost(DtoCreatePost data) {
+    public DtoReturnPost createPost(DtoCreatePost data) {
         userService.validateUserExistsById(data.userId());
 
         var user = userService.getReferenceById(data.userId());
@@ -39,11 +38,11 @@ public class PostService {
 
         this.save(newPost);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(new DtoReturnPost(newPost));
+        return new DtoReturnPost(newPost);
     }
 
     @Transactional
-    public ResponseEntity<?> deletePost(Long postId, Long userId) {
+    public DtoReturnPost deletePost(Long postId, Long userId) {
         validatePostExistsById(postId);
 
         var post = this.getReferenceById(postId);
@@ -59,11 +58,11 @@ public class PostService {
         userService.save(user);
         this.save(post);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnPost(post));
+        return new DtoReturnPost(post);
     }
 
     @Transactional
-    public ResponseEntity<?> reactivatePost(Long postId, Long userId) {
+    public DtoReturnPost reactivatePost(Long postId, Long userId) {
         validatePostExistsById(postId);
 
         var post = this.getReferenceById(postId);
@@ -79,11 +78,11 @@ public class PostService {
         userService.save(user);
         this.save(post);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnPost(post));
+        return new DtoReturnPost(post);
     }
 
     @Transactional
-    public ResponseEntity<?> updatePost(DtoUpdatePost data) {
+    public DtoReturnPost updatePost(DtoUpdatePost data) {
         validatePostExistsById(data.postId());
 
         var post = this.getReferenceById(data.postId());
@@ -96,50 +95,46 @@ public class PostService {
         post.updatePost(data.content());
         this.save(post);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnPost(post));
+        return new DtoReturnPost(post);
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<?> getPostsByUser(Long userId) {
+    public List<DtoReturnPost> getPostsByUser(Long userId) {
         userService.validateUserExistsById(userId);
         var user = userService.getReferenceById(userId);
         userService.validateUserActive(user);
 
         var postsByOwner = postRepository.findActivePostsByPostOwner(user);
-        List<DtoReturnPost> posts = postsByOwner.stream()
+        return postsByOwner.stream()
                 .map(DtoReturnPost::new)
                 .toList();
-
-        return ResponseEntity.status(HttpStatus.OK).body(posts);
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<?> getFollowingUsersPosts(Long userId) {
+    public List<DtoReturnPost> getFollowingUsersPosts(Long userId) {
         userService.validateUserExistsById(userId);
         var user = userService.getReferenceById(userId);
         userService.validateUserActive(user);
 
-        var posts = user.getFollowing().stream()
+        return user.getFollowing().stream()
                 .flatMap(i -> postRepository.findActivePostsByPostOwner(i).stream())
                 .map(DtoReturnPost::new)
                 .toList();
-
-        return ResponseEntity.status(HttpStatus.OK).body(posts);
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<?> getPostById(Long id) {
+    public DtoReturnPost getPostById(Long id) {
         validatePostExistsById(id);
 
         var post = this.getReferenceById(id);
 
         validatePostActive(post);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnPost(post));
+        return new DtoReturnPost(post);
     }
 
     @Transactional
-    public ResponseEntity<?> likePost(DtoLike data) {
+    public DtoReturnPost likePost(DtoLike data) {
         userService.validateUserExistsById(data.userId());
         validatePostExistsById(data.postId());
 
@@ -159,11 +154,11 @@ public class PostService {
         post.setLikeCount(post.getLikeCount() + 1);
         this.save(post);
 
-        return ResponseEntity.status(HttpStatus.OK).body(user.getUserName() + " LIKED THE POST");
+        return new DtoReturnPost(post);
     }
 
     @Transactional
-    public ResponseEntity<?> dislikePost(DtoLike data) {
+    public DtoReturnPost dislikePost(DtoLike data) {
         userService.validateUserExistsById(data.userId());
         validatePostExistsById(data.postId());
 
@@ -179,7 +174,7 @@ public class PostService {
                 post.setLikeCount(post.getLikeCount() - 1);
                 this.save(post);
 
-                return ResponseEntity.status(HttpStatus.OK).body("LIKE REMOVED");
+                return new DtoReturnPost(post);
             }
         }
         throw new LikedPostsException("User didn't like this post.");
@@ -187,12 +182,10 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<?> getPublicFeed() {
-        var publicPosts = postRepository.findAllPostsWherePostOwnerProfileIsPublic().stream()
+    public List<DtoReturnPost> getPublicFeed() {
+        return postRepository.findAllPostsWherePostOwnerProfileIsPublic().stream()
                 .map(DtoReturnPost::new)
                 .toList();
-
-        return ResponseEntity.status(HttpStatus.OK).body(publicPosts);
     }
 
     public void validatePostExistsById(Long id) {
