@@ -4,7 +4,13 @@ import br.com.minirs.dto.reactions.DtoCreateComment;
 import br.com.minirs.dto.reactions.DtoReturnComment;
 import br.com.minirs.dto.reactions.DtoUpdateComment;
 import br.com.minirs.entities.Comments;
+import br.com.minirs.entities.Post;
 import br.com.minirs.entities.PrivacyStatusEnum;
+import br.com.minirs.entities.User;
+import br.com.minirs.exceptions.comment.CommentAlreadyActiveException;
+import br.com.minirs.exceptions.comment.CommentDeletedException;
+import br.com.minirs.exceptions.comment.CommentNotFoundException;
+import br.com.minirs.exceptions.follow.ActionNotAllowedException;
 import br.com.minirs.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,16 +32,13 @@ public class CommentService {
 
     @Transactional
     public ResponseEntity<?> createComment(DtoCreateComment data) {
-        if (!userService.existsById(data.userId()) || !postService.existsById(data.postId())){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User or Post not found.");
-        }
+        userService.validateUserExistsById(data.userId());
+        postService.validatePostExistsById(data.postId());
 
         var user = userService.getReferenceById(data.userId());
         var post = postService.getReferenceById(data.postId());
 
-        if (!user.getFollowing().contains(post.getPostOwner()) && post.getPostOwner().getProfilePrivacyStatus().equals(PrivacyStatusEnum.PRIVATE)){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: User is not following post owner.");
-        }
+        validateUserCanCommentOnPost(user, post);
 
         var comment = new Comments(user, post, data.content());
         this.save(comment);
@@ -45,73 +48,92 @@ public class CommentService {
 
     @Transactional
     public ResponseEntity<?> deleteComment(Long commentId, Long userId) {
-        if (this.existsById(commentId)){
-            var comment = this.getReferenceById(commentId);
-            var user = userService.getReferenceById(userId);
+        validateCommentExistsById(commentId);
 
-            if (comment.getUser() != user) return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not allowed to delete this comment.");
+        var comment = this.getReferenceById(commentId);
+        var user = userService.getReferenceById(userId);
 
-            if (comment.getActive()){
-                comment.setActive(false);
-                this.save(comment);
+        validateUserPermission(comment, user);
+        validateCommentActive(comment);
 
-                return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
-            }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Comment is already deleted.");
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: Comment not found.");
+        comment.setActive(false);
+        this.save(comment);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
     }
 
     @Transactional
     public ResponseEntity<?> reactiveComment(Long commentId, Long userId) {
-        if (this.existsById(commentId)){
-            var comment = this.getReferenceById(commentId);
-            var user = userService.getReferenceById(userId);
+        validateCommentExistsById(commentId);
 
-            if (comment.getUser() != user) return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not allowed to reactivate this comment.");
+        var comment = this.getReferenceById(commentId);
+        var user = userService.getReferenceById(userId);
 
-            if (!comment.getActive()){
-                comment.setActive(true);
-                this.save(comment);
+        validateUserPermission(comment, user);
+        validateCommentInactive(comment);
 
-                return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
-            }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Comment is already active.");
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: Comment not found.");
+        comment.setActive(true);
+        this.save(comment);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
     }
 
     @Transactional
     public ResponseEntity<?> updateComment(DtoUpdateComment data) {
-        if (this.existsById(data.commentId())){
-            var comment = this.getReferenceById(data.commentId());
-            var user = userService.getReferenceById(data.userId());
+        validateCommentExistsById(data.commentId());
 
-            if (comment.getUser() != user) return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: User is not allowed to update this comment.");
+        var comment = this.getReferenceById(data.commentId());
+        var user = userService.getReferenceById(data.userId());
 
-            if (comment.getActive()){
-                comment.updateComment(data.content());
-                this.save(comment);
+        validateUserPermission(comment, user);
+        validateCommentActive(comment);
 
-                return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
-            }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Comment is deleted.");
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: Comment not found.");
+        comment.updateComment(data.content());
+        this.save(comment);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
     }
 
     @Transactional(readOnly = true)
     public ResponseEntity<?> getCommentById(Long id) {
-        if (this.existsById(id)){
-            var comment = this.getReferenceById(id);
+        validateCommentExistsById(id);
 
-            if (!comment.getActive()){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("ERROR: Comment was deleted.");
-            }
+        var comment = this.getReferenceById(id);
 
-            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
+        validateCommentActive(comment);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnComment(comment));
+    }
+
+    private void validateCommentExistsById(Long commentId) {
+        if (!commentRepository.existsById(commentId)) {
+            throw new CommentNotFoundException(commentId);
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ERROR: Comment not found.");
+    }
+
+    private void validateUserPermission(Comments comment, User user) {
+        if (!comment.getUser().equals(user)) {
+            throw new ActionNotAllowedException("User is not allowed to perform this action on the comment.");
+        }
+    }
+
+    private void validateCommentActive(Comments comment) {
+        if (!comment.getActive()) {
+            throw new CommentDeletedException();
+        }
+    }
+
+    private void validateCommentInactive(Comments comment) {
+        if (comment.getActive()) {
+            throw new CommentAlreadyActiveException();
+        }
+    }
+
+    private void validateUserCanCommentOnPost(User user, Post post) {
+        if (!user.getFollowing().contains(post.getPostOwner()) &&
+                post.getPostOwner().getProfilePrivacyStatus().equals(PrivacyStatusEnum.PRIVATE)) {
+            throw new ActionNotAllowedException("User is not following the post owner.");
+        }
     }
 
     @Transactional
