@@ -11,8 +11,6 @@ import br.com.minirs.exceptions.follow.FollowRequestNotFoundException;
 import br.com.minirs.exceptions.follow.InvalidFollowRequestException;
 import br.com.minirs.repositories.FollowRequestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +24,7 @@ public class FollowService {
     private FollowRequestRepository followRequestRepository;
 
     @Transactional
-    public ResponseEntity<?> acceptFollowRequest(Long requestId, Long requestedUserId) {
+    public DtoReturnUser acceptFollowRequest(Long requestId, Long requestedUserId) {
         userService.validateUserExistsById(requestedUserId);
         validateFollowRequestExistsById(requestId);
 
@@ -39,11 +37,11 @@ public class FollowService {
         followRequest.acceptRequest();
         this.save(followRequest);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(followRequest.getRequester()));
+        return new DtoReturnUser(followRequest.getRequester());
     }
 
     @Transactional
-    public ResponseEntity<?> denyFollowRequest(Long requestId, Long requestedUserId) {
+    public DtoReturnUser denyFollowRequest(Long requestId, Long requestedUserId) {
         userService.validateUserExistsById(requestedUserId);
         validateFollowRequestExistsById(requestId);
 
@@ -56,11 +54,11 @@ public class FollowService {
         followRequest.denyRequest();
         this.save(followRequest);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(followRequest.getRequester()));
+        return new DtoReturnUser(followRequest.getRequester());
     }
 
     @Transactional
-    public ResponseEntity<?> followUser(Long loggedUserId, Long followUserId) {
+    public Object followUser(Long loggedUserId, Long followUserId) {
         userService.validateUserExistsById(loggedUserId);
         userService.validateUserExistsById(followUserId);
 
@@ -75,17 +73,17 @@ public class FollowService {
             }
             var followRequest = new FollowRequest(loggedUser, followUser);
             this.save(followRequest);
-            return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnFollowRequest(followRequest));
+            return new DtoReturnFollowRequest(followRequest);
         }
 
         loggedUser.followUser(followUser);
         userService.save(loggedUser);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(loggedUser));
+        return new DtoReturnUser(loggedUser);
     }
 
     @Transactional
-    public ResponseEntity<?> unfollowUser(Long loggedUserId, Long followUserId) {
+    public DtoReturnUser unfollowUser(Long loggedUserId, Long followUserId) {
         userService.validateUserExistsById(loggedUserId);
         userService.validateUserExistsById(followUserId);
 
@@ -97,7 +95,7 @@ public class FollowService {
         loggedUser.unfollowUser(unfollowUser);
         userService.save(loggedUser);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new DtoReturnUser(loggedUser));
+        return new DtoReturnUser(loggedUser);
     }
 
     private boolean existsById(Long id) {
