@@ -1,6 +1,10 @@
 package br.com.minirs.infra;
 
 import br.com.minirs.dto.ExceptionDto;
+import br.com.minirs.exceptions.follow.ActionNotAllowedException;
+import br.com.minirs.exceptions.follow.FollowRequestDisabledException;
+import br.com.minirs.exceptions.follow.FollowRequestNotFoundException;
+import br.com.minirs.exceptions.follow.InvalidFollowRequestException;
 import br.com.minirs.exceptions.post.LikedPostsException;
 import br.com.minirs.exceptions.post.PostDeletedException;
 import br.com.minirs.exceptions.post.PostNotFoundException;
@@ -25,9 +29,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(dto);
     }
 
+    @ExceptionHandler(ActionNotAllowedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ResponseEntity<ExceptionDto> handleActionNotAllowedException(ActionNotAllowedException ex) {
+        var dto = new ExceptionDto(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(dto);
+    }
+
     @ExceptionHandler(PostDeletedException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ResponseEntity<ExceptionDto> handlePostDeletedException(PostDeletedException ex) {
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
+    }
+
+    @ExceptionHandler(InvalidFollowRequestException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<ExceptionDto> handleInvalidFollowRequestException(InvalidFollowRequestException ex) {
         var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
     }
@@ -59,6 +77,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
     }
 
+    @ExceptionHandler(FollowRequestNotFoundException.class)
+    public ResponseEntity<?> handleFollowRequestNotFoundException(FollowRequestNotFoundException ex) {
+        var dto = new ExceptionDto(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
+    }
+
     @ExceptionHandler(PostNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResponseEntity<ExceptionDto> handlePostNotFoundException(PostNotFoundException ex) {
@@ -68,8 +92,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserDisabledException.class)
     public ResponseEntity<?> handleUserDisabledException(UserDisabledException ex) {
-        var dto = new ExceptionDto(HttpStatus.FORBIDDEN.value(), HttpStatus.FORBIDDEN, ex.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(dto);
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
+    }
+
+    @ExceptionHandler(FollowRequestDisabledException.class)
+    public ResponseEntity<?> handleFollowRequestDisabledException(FollowRequestDisabledException ex) {
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
     }
 
     @ExceptionHandler(Exception.class)
