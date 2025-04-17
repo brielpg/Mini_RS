@@ -5,7 +5,7 @@ import br.com.minirs.dto.reactions.DtoReturnComment;
 import br.com.minirs.dto.reactions.DtoUpdateComment;
 import br.com.minirs.entities.Comments;
 import br.com.minirs.entities.Post;
-import br.com.minirs.entities.PrivacyStatusEnum;
+import br.com.minirs.enums.PrivacyStatusEnum;
 import br.com.minirs.entities.User;
 import br.com.minirs.exceptions.comment.CommentAlreadyActiveException;
 import br.com.minirs.exceptions.comment.CommentDeletedException;

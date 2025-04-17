@@ -3,7 +3,7 @@ package br.com.minirs.services;
 import br.com.minirs.dto.follow.DtoReturnFollowRequest;
 import br.com.minirs.dto.user.DtoReturnUser;
 import br.com.minirs.entities.FollowRequest;
-import br.com.minirs.entities.PrivacyStatusEnum;
+import br.com.minirs.enums.PrivacyStatusEnum;
 import br.com.minirs.entities.User;
 import br.com.minirs.exceptions.follow.ActionNotAllowedException;
 import br.com.minirs.exceptions.follow.FollowRequestDisabledException;

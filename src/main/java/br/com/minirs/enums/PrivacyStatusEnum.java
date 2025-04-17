@@ -1,4 +1,4 @@
-package br.com.minirs.entities;
+package br.com.minirs.enums;
 
 public enum PrivacyStatusEnum {
     PUBLIC,

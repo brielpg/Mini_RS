@@ -1,6 +1,6 @@
 package br.com.minirs.dto.user;
 
-import br.com.minirs.entities.PrivacyStatusEnum;
+import br.com.minirs.enums.PrivacyStatusEnum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 

@@ -2,6 +2,7 @@ package br.com.minirs.entities;
 
 import br.com.minirs.dto.user.DtoCreateUser;
 import br.com.minirs.dto.user.DtoUpdateUser;
+import br.com.minirs.enums.PrivacyStatusEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
