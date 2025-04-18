@@ -5,8 +5,9 @@ import br.com.minirs.dto.user.DtoReturnUser;
 import br.com.minirs.dto.user.DtoUpdateUser;
 import br.com.minirs.entities.User;
 import br.com.minirs.exceptions.NotFoundException;
+import br.com.minirs.exceptions.ResourceAlreadyActiveException;
+import br.com.minirs.exceptions.ResourceDisabledException;
 import br.com.minirs.exceptions.user.EmailAlreadyRegisteredException;
-import br.com.minirs.exceptions.user.UserDisabledException;
 import br.com.minirs.exceptions.user.UserNameAlreadyRegisteredException;
 import br.com.minirs.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +53,7 @@ public class UserService {
 
         var user = this.getReferenceById(id);
 
-        if (!user.getActive()) throw new UserDisabledException("User is already disabled");
+        if (!user.getActive()) throw new ResourceDisabledException("User is already disabled");
 
         user.setActive(false);
         this.save(user);
@@ -67,7 +68,7 @@ public class UserService {
 
         var user = this.getReferenceById(id);
 
-        if (user.getActive()) throw new UserDisabledException("User is already enabled");
+        if (user.getActive()) throw new ResourceAlreadyActiveException("User", id);
 
         user.setActive(true);
         this.save(user);
@@ -137,7 +138,7 @@ public class UserService {
 
     public void validateUserActive(User user) {
         if (!user.getActive()) {
-            throw new UserDisabledException();
+            throw new ResourceDisabledException("User", user.getId());
         }
     }
 

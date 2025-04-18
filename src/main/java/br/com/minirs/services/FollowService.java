@@ -6,9 +6,9 @@ import br.com.minirs.entities.FollowRequest;
 import br.com.minirs.entities.User;
 import br.com.minirs.enums.PrivacyStatusEnum;
 import br.com.minirs.exceptions.NotFoundException;
-import br.com.minirs.exceptions.follow.FollowRequestDisabledException;
-import br.com.minirs.exceptions.follow.InvalidFollowRequestException;
+import br.com.minirs.exceptions.ResourceDisabledException;
 import br.com.minirs.exceptions.UnauthorizedException;
+import br.com.minirs.exceptions.follow.InvalidFollowRequestException;
 import br.com.minirs.repositories.FollowRequestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -106,7 +106,7 @@ public class FollowService {
 
     private void validateFollowRequestActive(FollowRequest followRequest) {
         if (!followRequest.getActive()) {
-            throw new FollowRequestDisabledException();
+            throw new ResourceDisabledException("Follow Request", followRequest.getId());
         }
     }
 

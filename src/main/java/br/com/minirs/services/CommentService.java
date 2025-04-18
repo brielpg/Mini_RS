@@ -8,8 +8,8 @@ import br.com.minirs.entities.Post;
 import br.com.minirs.entities.User;
 import br.com.minirs.enums.PrivacyStatusEnum;
 import br.com.minirs.exceptions.NotFoundException;
-import br.com.minirs.exceptions.comment.CommentAlreadyActiveException;
-import br.com.minirs.exceptions.comment.CommentDeletedException;
+import br.com.minirs.exceptions.ResourceAlreadyActiveException;
+import br.com.minirs.exceptions.ResourceDisabledException;
 import br.com.minirs.exceptions.UnauthorizedException;
 import br.com.minirs.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -117,13 +117,13 @@ public class CommentService {
 
     private void validateCommentActive(Comments comment) {
         if (!comment.getActive()) {
-            throw new CommentDeletedException();
+            throw new ResourceDisabledException("Comment", comment.getId());
         }
     }
 
     private void validateCommentInactive(Comments comment) {
         if (comment.getActive()) {
-            throw new CommentAlreadyActiveException();
+            throw new ResourceAlreadyActiveException("Comment", comment.getId());
         }
     }
 

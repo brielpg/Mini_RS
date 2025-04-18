@@ -7,9 +7,10 @@ import br.com.minirs.dto.reactions.DtoLike;
 import br.com.minirs.entities.Post;
 import br.com.minirs.entities.User;
 import br.com.minirs.exceptions.NotFoundException;
-import br.com.minirs.exceptions.post.LikedPostsException;
-import br.com.minirs.exceptions.post.PostDeletedException;
+import br.com.minirs.exceptions.ResourceAlreadyActiveException;
+import br.com.minirs.exceptions.ResourceDisabledException;
 import br.com.minirs.exceptions.UnauthorizedException;
+import br.com.minirs.exceptions.post.LikedPostsException;
 import br.com.minirs.repositories.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -69,7 +70,7 @@ public class PostService {
 
         validatePostOwner(post, user, "User is not allowed to reactivate this post");
 
-        if (post.getActive()) throw new PostDeletedException("Post is already active");
+        if (post.getActive()) throw new ResourceAlreadyActiveException("Post", postId);
 
         post.setActive(true);
         user.setPostCount(user.getPostCount() + 1);
@@ -201,7 +202,7 @@ public class PostService {
 
     private void validatePostActive(Post post) {
         if (!post.getActive()) {
-            throw new PostDeletedException();
+            throw new ResourceDisabledException("Post", post.getId());
         }
     }
 
