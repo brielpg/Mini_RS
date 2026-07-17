@@ -1,7 +1,7 @@
 package br.com.minirs.application.services;
 
-import br.com.minirs.application.dtos.follow.DtoReturnFollowRequest;
-import br.com.minirs.application.dtos.user.DtoReturnUser;
+import br.com.minirs.application.dtos.follow.FollowRequestResponse;
+import br.com.minirs.application.dtos.user.UserResponse;
 import br.com.minirs.domain.entities.FollowRequest;
 import br.com.minirs.domain.entities.User;
 import br.com.minirs.domain.enums.PrivacyStatusEnum;
@@ -24,7 +24,7 @@ public class FollowService {
     private FollowRequestRepository followRequestRepository;
 
     @Transactional
-    public DtoReturnUser acceptFollowRequest(Long requestId, Long requestedUserId) {
+    public UserResponse acceptFollowRequest(Long requestId, Long requestedUserId) {
         userService.validateUserExistsById(requestedUserId);
         validateFollowRequestExistsById(requestId);
 
@@ -37,11 +37,11 @@ public class FollowService {
         followRequest.acceptRequest();
         this.save(followRequest);
 
-        return new DtoReturnUser(followRequest.getRequester());
+        return new UserResponse(followRequest.getRequester());
     }
 
     @Transactional
-    public DtoReturnUser denyFollowRequest(Long requestId, Long requestedUserId) {
+    public UserResponse denyFollowRequest(Long requestId, Long requestedUserId) {
         userService.validateUserExistsById(requestedUserId);
         validateFollowRequestExistsById(requestId);
 
@@ -54,7 +54,7 @@ public class FollowService {
         followRequest.denyRequest();
         this.save(followRequest);
 
-        return new DtoReturnUser(followRequest.getRequester());
+        return new UserResponse(followRequest.getRequester());
     }
 
     @Transactional
@@ -73,17 +73,17 @@ public class FollowService {
             }
             var followRequest = new FollowRequest(loggedUser, followUser);
             this.save(followRequest);
-            return new DtoReturnFollowRequest(followRequest);
+            return new FollowRequestResponse(followRequest);
         }
 
         loggedUser.followUser(followUser);
         userService.save(loggedUser);
 
-        return new DtoReturnUser(loggedUser);
+        return new UserResponse(loggedUser);
     }
 
     @Transactional
-    public DtoReturnUser unfollowUser(Long loggedUserId, Long followUserId) {
+    public UserResponse unfollowUser(Long loggedUserId, Long followUserId) {
         userService.validateUserExistsById(loggedUserId);
         userService.validateUserExistsById(followUserId);
 
@@ -95,7 +95,7 @@ public class FollowService {
         loggedUser.unfollowUser(unfollowUser);
         userService.save(loggedUser);
 
-        return new DtoReturnUser(loggedUser);
+        return new UserResponse(loggedUser);
     }
 
     private void validateFollowRequestExistsById(Long id) {

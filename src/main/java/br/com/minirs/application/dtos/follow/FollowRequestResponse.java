@@ -1,24 +1,24 @@
 package br.com.minirs.application.dtos.follow;
 
-import br.com.minirs.application.dtos.user.DtoReturnUser;
+import br.com.minirs.application.dtos.user.UserResponse;
 import br.com.minirs.domain.entities.FollowRequest;
 
 import java.time.LocalDate;
 
-public class DtoReturnFollowRequest {
+public class FollowRequestResponse {
     public Long id;
     public LocalDate requestDate;
     public Boolean accepted;
     public Boolean active;
-    public DtoReturnUser requester;
-    public DtoReturnUser requested;
+    public UserResponse requester;
+    public UserResponse requested;
 
-    public DtoReturnFollowRequest(FollowRequest followRequest){
+    public FollowRequestResponse(FollowRequest followRequest){
         this.id = followRequest.getId();
         this.requestDate = followRequest.getRequestDate();
         this.accepted = followRequest.getAccepted();
         this.active = followRequest.getActive();
-        this.requester = new DtoReturnUser(followRequest.getRequester());
-        this.requested = new DtoReturnUser(followRequest.getRequested());
+        this.requester = new UserResponse(followRequest.getRequester());
+        this.requested = new UserResponse(followRequest.getRequested());
     }
 }

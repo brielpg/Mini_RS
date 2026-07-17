@@ -1,6 +1,6 @@
 package br.com.minirs.infrastructure.presentation.web;
 
-import br.com.minirs.application.dtos.user.DtoReturnUser;
+import br.com.minirs.application.dtos.user.UserResponse;
 import br.com.minirs.application.services.FollowService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,19 +23,19 @@ public class FollowController {
     }
 
     @PostMapping("/unfollow/{loggedUserId}/{followUserId}")
-    public ResponseEntity<DtoReturnUser> unfollowUser(@PathVariable Long loggedUserId, @PathVariable Long followUserId){
+    public ResponseEntity<UserResponse> unfollowUser(@PathVariable Long loggedUserId, @PathVariable Long followUserId){
         var user = followService.unfollowUser(loggedUserId, followUserId);
         return ResponseEntity.ok(user);
     }
 
     @PostMapping("/accept/{requestId}/{requestedUserId}")
-    public ResponseEntity<DtoReturnUser> acceptFollowRequest(@PathVariable Long requestId, @PathVariable Long requestedUserId){
+    public ResponseEntity<UserResponse> acceptFollowRequest(@PathVariable Long requestId, @PathVariable Long requestedUserId){
         var user = followService.acceptFollowRequest(requestId, requestedUserId);
         return ResponseEntity.ok(user);
     }
 
     @PostMapping("/deny/{requestId}/{requestedUserId}")
-    public ResponseEntity<DtoReturnUser> denyFollowRequest(@PathVariable Long requestId, @PathVariable Long requestedUserId){
+    public ResponseEntity<UserResponse> denyFollowRequest(@PathVariable Long requestId, @PathVariable Long requestedUserId){
         var user = followService.denyFollowRequest(requestId, requestedUserId);
         return ResponseEntity.ok(user);
     }

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
-public record DtoUpdateUser(
+public record UserUpdateRequest(
         @NotNull(message = "Id é obrigatório")
         Long id,
         String fullName,

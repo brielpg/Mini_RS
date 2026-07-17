@@ -1,6 +1,6 @@
 package br.com.minirs.domain.entities;
 
-import br.com.minirs.application.dtos.post.DtoCreatePost;
+import br.com.minirs.application.dtos.post.PostCreateRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,7 +35,7 @@ public class Post {
     private List<Long> likesByUserId = new ArrayList<>();
     private Integer likeCount;
 
-    public Post(DtoCreatePost data, User postOwner){
+    public Post(PostCreateRequest data, User postOwner){
         this.content = data.content();
         this.active = true;
         this.publishDate = LocalDate.now();

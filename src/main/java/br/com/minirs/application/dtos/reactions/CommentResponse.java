@@ -5,7 +5,7 @@ import br.com.minirs.domain.entities.Comments;
 import java.time.LocalDate;
 import java.util.List;
 
-public class DtoReturnComment {
+public class CommentResponse {
     public Long id;
     public String content;
     public String commentOwner;
@@ -15,7 +15,7 @@ public class DtoReturnComment {
     public Boolean commentUpdated;
     public List<LocalDate> updateDates;
 
-    public DtoReturnComment(Comments comment){
+    public CommentResponse(Comments comment){
         this.id = comment.getId();
         this.content = comment.getContent();
         this.commentOwner = comment.getUser().getUserName();

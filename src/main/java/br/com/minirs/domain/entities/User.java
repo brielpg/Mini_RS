@@ -1,7 +1,7 @@
 package br.com.minirs.domain.entities;
 
-import br.com.minirs.application.dtos.user.DtoCreateUser;
-import br.com.minirs.application.dtos.user.DtoUpdateUser;
+import br.com.minirs.application.dtos.user.UserCreateRequest;
+import br.com.minirs.application.dtos.user.UserUpdateRequest;
 import br.com.minirs.domain.enums.PrivacyStatusEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -53,7 +53,7 @@ public class User {
     @ManyToMany(mappedBy = "followers", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private Set<User> following = new HashSet<>();
 
-    public User(DtoCreateUser data){
+    public User(UserCreateRequest data){
         this.fullName = data.fullName();
         this.userName = data.userName();
         this.email = data.email();
@@ -71,7 +71,7 @@ public class User {
         if (data.gender() != null){ this.gender = data.gender(); }
     }
 
-    public void updateData(DtoUpdateUser data) {
+    public void updateData(UserUpdateRequest data) {
         if (data.fullName() != null){
             this.fullName = data.fullName();
         }

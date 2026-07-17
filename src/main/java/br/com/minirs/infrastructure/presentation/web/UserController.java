@@ -1,8 +1,8 @@
 package br.com.minirs.infrastructure.presentation.web;
 
-import br.com.minirs.application.dtos.user.DtoCreateUser;
-import br.com.minirs.application.dtos.user.DtoReturnUser;
-import br.com.minirs.application.dtos.user.DtoUpdateUser;
+import br.com.minirs.application.dtos.user.UserCreateRequest;
+import br.com.minirs.application.dtos.user.UserResponse;
+import br.com.minirs.application.dtos.user.UserUpdateRequest;
 import br.com.minirs.application.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +20,13 @@ public class UserController {
     private UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<DtoReturnUser>> getAllUsers(){
+    public ResponseEntity<List<UserResponse>> getAllUsers(){
         var users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DtoReturnUser> getUserById(@PathVariable Long id){
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id){
         var user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
@@ -44,19 +44,19 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<DtoReturnUser> createUser(@RequestBody @Valid DtoCreateUser data) {
+    public ResponseEntity<UserResponse> createUser(@RequestBody @Valid UserCreateRequest data) {
         var user = userService.createUser(data);
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
     @PutMapping
-    public ResponseEntity<DtoReturnUser> updateUser(@RequestBody @Valid DtoUpdateUser data){
+    public ResponseEntity<UserResponse> updateUser(@RequestBody @Valid UserUpdateRequest data){
         var user = userService.updateUser(data);
         return ResponseEntity.ok(user);
     }
 
     @DeleteMapping("/disable/{id}")
-    public ResponseEntity<DtoReturnUser> disableUser(@PathVariable Long id){
+    public ResponseEntity<UserResponse> disableUser(@PathVariable Long id){
         var user = userService.disableUser(id);
         return ResponseEntity.ok(user);
     }

@@ -1,8 +1,8 @@
 package br.com.minirs.application.services;
 
-import br.com.minirs.application.dtos.user.DtoCreateUser;
-import br.com.minirs.application.dtos.user.DtoReturnUser;
-import br.com.minirs.application.dtos.user.DtoUpdateUser;
+import br.com.minirs.application.dtos.user.UserCreateRequest;
+import br.com.minirs.application.dtos.user.UserResponse;
+import br.com.minirs.application.dtos.user.UserUpdateRequest;
 import br.com.minirs.domain.entities.User;
 import br.com.minirs.domain.exceptions.NotFoundException;
 import br.com.minirs.domain.exceptions.ResourceAlreadyActiveException;
@@ -23,17 +23,17 @@ public class UserService {
     private UserRepository userRepository;
 
     @Transactional
-    public DtoReturnUser createUser(DtoCreateUser data) {
+    public UserResponse createUser(UserCreateRequest data) {
         validateEmailAndUsername(data.email(), data.userName());
 
         var newUser = new User(data);
         this.save(newUser);
 
-        return new DtoReturnUser(newUser);
+        return new UserResponse(newUser);
     }
 
     @Transactional
-    public DtoReturnUser updateUser(DtoUpdateUser data) {
+    public UserResponse updateUser(UserUpdateRequest data) {
         validateUserExistsById(data.id());
 
         var user = this.getReferenceById(data.id());
@@ -44,11 +44,11 @@ public class UserService {
         user.updateData(data);
         this.save(user);
 
-        return new DtoReturnUser(user);
+        return new UserResponse(user);
     }
 
     @Transactional
-    public DtoReturnUser disableUser(Long id) {
+    public UserResponse disableUser(Long id) {
         validateUserExistsById(id);
 
         var user = this.getReferenceById(id);
@@ -58,12 +58,12 @@ public class UserService {
         user.setActive(false);
         this.save(user);
 
-        return new DtoReturnUser(user);
+        return new UserResponse(user);
 
     }
 
     @Transactional
-    public DtoReturnUser enableUser(Long id) {
+    public UserResponse enableUser(Long id) {
         validateUserExistsById(id);
 
         var user = this.getReferenceById(id);
@@ -73,7 +73,7 @@ public class UserService {
         user.setActive(true);
         this.save(user);
 
-        return new DtoReturnUser(user);
+        return new UserResponse(user);
     }
 
     @Transactional(readOnly = true)
@@ -103,21 +103,21 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<DtoReturnUser> getAllUsers() {
+    public List<UserResponse> getAllUsers() {
         return userRepository.findActiveUsers().stream()
-                .map(DtoReturnUser::new)
+                .map(UserResponse::new)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public DtoReturnUser getUserById(Long id) {
+    public UserResponse getUserById(Long id) {
         validateUserExistsById(id);
 
         var user = this.getReferenceById(id);
 
         this.validateUserActive(user);
 
-        return new DtoReturnUser(user);
+        return new UserResponse(user);
     }
 
     public void validateUserExistsById(Long id) {

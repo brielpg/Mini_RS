@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
-public record DtoCreateUser(
+public record UserCreateRequest(
         @NotBlank(message = "Nome é obrigatório")
         String fullName,
         @NotBlank(message = "Username é obrigatório")

@@ -3,7 +3,7 @@ package br.com.minirs.application.dtos.user;
 import br.com.minirs.domain.enums.PrivacyStatusEnum;
 import br.com.minirs.domain.entities.User;
 
-public class DtoReturnUser {
+public class UserResponse {
     public Long id;
     public String fullName;
     public String userName;
@@ -13,7 +13,7 @@ public class DtoReturnUser {
     public Integer followingCount;
     public Integer postCount;
 
-    public DtoReturnUser(User user){
+    public UserResponse(User user){
         this.id = user.getId();
         this.fullName = user.getFullName();
         this.userName = user.getUserName();

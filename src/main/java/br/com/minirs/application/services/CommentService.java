@@ -1,8 +1,8 @@
 package br.com.minirs.application.services;
 
-import br.com.minirs.application.dtos.reactions.DtoCreateComment;
-import br.com.minirs.application.dtos.reactions.DtoReturnComment;
-import br.com.minirs.application.dtos.reactions.DtoUpdateComment;
+import br.com.minirs.application.dtos.reactions.CommentCreateRequest;
+import br.com.minirs.application.dtos.reactions.CommentResponse;
+import br.com.minirs.application.dtos.reactions.CommentUpdateRequest;
 import br.com.minirs.domain.entities.Comments;
 import br.com.minirs.domain.entities.Post;
 import br.com.minirs.domain.entities.User;
@@ -29,7 +29,7 @@ public class CommentService {
     private PostService postService;
 
     @Transactional
-    public DtoReturnComment createComment(DtoCreateComment data) {
+    public CommentResponse createComment(CommentCreateRequest data) {
         userService.validateUserExistsById(data.userId());
         postService.validatePostExistsById(data.postId());
 
@@ -41,11 +41,11 @@ public class CommentService {
         var comment = new Comments(user, post, data.content());
         this.save(comment);
 
-        return new DtoReturnComment(comment);
+        return new CommentResponse(comment);
     }
 
     @Transactional
-    public DtoReturnComment deleteComment(Long commentId, Long userId) {
+    public CommentResponse deleteComment(Long commentId, Long userId) {
         validateCommentExistsById(commentId);
 
         var comment = this.getReferenceById(commentId);
@@ -57,11 +57,11 @@ public class CommentService {
         comment.setActive(false);
         this.save(comment);
 
-        return new DtoReturnComment(comment);
+        return new CommentResponse(comment);
     }
 
     @Transactional
-    public DtoReturnComment reactiveComment(Long commentId, Long userId) {
+    public CommentResponse reactiveComment(Long commentId, Long userId) {
         validateCommentExistsById(commentId);
 
         var comment = this.getReferenceById(commentId);
@@ -73,11 +73,11 @@ public class CommentService {
         comment.setActive(true);
         this.save(comment);
 
-        return new DtoReturnComment(comment);
+        return new CommentResponse(comment);
     }
 
     @Transactional
-    public DtoReturnComment updateComment(DtoUpdateComment data) {
+    public CommentResponse updateComment(CommentUpdateRequest data) {
         validateCommentExistsById(data.commentId());
 
         var comment = this.getReferenceById(data.commentId());
@@ -89,18 +89,18 @@ public class CommentService {
         comment.updateComment(data.content());
         this.save(comment);
 
-        return new DtoReturnComment(comment);
+        return new CommentResponse(comment);
     }
 
     @Transactional(readOnly = true)
-    public DtoReturnComment getCommentById(Long id) {
+    public CommentResponse getCommentById(Long id) {
         validateCommentExistsById(id);
 
         var comment = this.getReferenceById(id);
 
         validateCommentActive(comment);
 
-        return new DtoReturnComment(comment);
+        return new CommentResponse(comment);
     }
 
     private void validateCommentExistsById(Long commentId) {
