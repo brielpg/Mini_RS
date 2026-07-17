@@ -1,0 +1,80 @@
+package br.com.minirs.infrastructure.handlers;
+
+import br.com.minirs.application.dtos.ExceptionDto;
+import br.com.minirs.domain.exceptions.NotFoundException;
+import br.com.minirs.domain.exceptions.ResourceAlreadyActiveException;
+import br.com.minirs.domain.exceptions.ResourceDisabledException;
+import br.com.minirs.domain.exceptions.UnauthorizedException;
+import br.com.minirs.domain.exceptions.follow.InvalidFollowRequestException;
+import br.com.minirs.domain.exceptions.post.LikedPostsException;
+import br.com.minirs.domain.exceptions.user.EmailAlreadyRegisteredException;
+import br.com.minirs.domain.exceptions.user.UserNameAlreadyRegisteredException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ResponseEntity<ExceptionDto> handleUnauthorizedException(UnauthorizedException ex) {
+        var dto = new ExceptionDto(HttpStatus.FORBIDDEN.value(), HttpStatus.FORBIDDEN, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(dto);
+    }
+
+    @ExceptionHandler(InvalidFollowRequestException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<ExceptionDto> handleInvalidFollowRequestException(InvalidFollowRequestException ex) {
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
+    }
+
+    @ExceptionHandler(LikedPostsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<ExceptionDto> handleLikedPostsException(LikedPostsException ex) {
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
+    }
+
+    @ExceptionHandler(EmailAlreadyRegisteredException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<ExceptionDto> handleEmailAlreadyRegisteredException(EmailAlreadyRegisteredException ex) {
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
+    }
+
+    @ExceptionHandler(UserNameAlreadyRegisteredException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<ExceptionDto> handleUserNameAlreadyRegisteredException(UserNameAlreadyRegisteredException ex) {
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
+    }
+    @ExceptionHandler(ResourceAlreadyActiveException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<ExceptionDto> handleResourceAlreadyActiveException(ResourceAlreadyActiveException ex) {
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<?> handleNotFoundException(NotFoundException ex) {
+        var dto = new ExceptionDto(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
+    }
+
+    @ExceptionHandler(ResourceDisabledException.class)
+    public ResponseEntity<?> handleResourceDisabledException(ResourceDisabledException ex) {
+        var dto = new ExceptionDto(HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<ExceptionDto> handleGenericException(Exception ex) {
+        var dto = new ExceptionDto(HttpStatus.INTERNAL_SERVER_ERROR.value(), HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(dto);
+    }
+}
