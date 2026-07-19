@@ -1,118 +1,176 @@
 package br.com.minirs.domain.entities;
 
-import br.com.minirs.application.dtos.user.UserCreateRequest;
-import br.com.minirs.application.dtos.user.UserUpdateRequest;
 import br.com.minirs.domain.enums.PrivacyStatusEnum;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import br.com.minirs.domain.exceptions.ResourceAlreadyActiveException;
+import br.com.minirs.domain.exceptions.ResourceDisabledException;
+import br.com.minirs.domain.valueobjects.Email;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
-@Table(name = "minirs_users")
-@NoArgsConstructor
-@AllArgsConstructor
-@Data
-@ToString
-@EqualsAndHashCode(of = "id")
+@Table(name = "tb_users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    //USER INFO
+    @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
+
+    @Column(name = "username", nullable = false, unique = true, length = 50)
     private String userName;
-    private String email;
+
+    @Embedded
+    private Email email;
+
+    @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
-    private LocalDate registrationDate;
+
+    @Column(name = "biography", length = 500)
     private String biography;
-    private String gender;
-    @JsonIgnore
+
+    @Column(name = "password", nullable = false, length = 255)
     private String password;
 
-    //STATUS
-    private Boolean active;
     @Enumerated(EnumType.STRING)
-    private PrivacyStatusEnum profilePrivacyStatus;
-    private Integer followersCount;
-    private Integer followingCount;
-    private Integer postCount;
+    @Column(name = "privacy_status", nullable = false, length = 20)
+    private PrivacyStatusEnum profilePrivacyStatus = PrivacyStatusEnum.PUBLIC;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @JoinTable(
-            name = "followers",
-            joinColumns = @JoinColumn(name = "userId"),
-            inverseJoinColumns = @JoinColumn(name = "followerId")
-    )
-    private Set<User> followers = new HashSet<>();
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
 
-    @ManyToMany(mappedBy = "followers", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private Set<User> following = new HashSet<>();
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    public User(UserCreateRequest data){
-        this.fullName = data.fullName();
-        this.userName = data.userName();
-        this.email = data.email();
-        this.birthDate = data.birthDate();
-        this.password = data.password();
-        this.profilePrivacyStatus = data.profilePrivacyStatus();
+    protected User() {
+    }
 
-        this.registrationDate = LocalDate.now();
+    public User(String fullName, String userName, Email email, LocalDate birthDate, String password) {
+        changeFullName(fullName);
+        changeUserName(userName);
+        changeEmail(email);
+        changeBirthDate(birthDate);
+        changePassword(password);
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public String getEmail() {
+        return email.getValue();
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public PrivacyStatusEnum getProfilePrivacyStatus() {
+        return profilePrivacyStatus;
+    }
+
+    public boolean isPublicProfile() {
+        return profilePrivacyStatus == PrivacyStatusEnum.PUBLIC;
+    }
+
+    public boolean isPrivateProfile() {
+        return profilePrivacyStatus == PrivacyStatusEnum.PRIVATE;
+    }
+
+    public void changeFullName(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            throw new IllegalArgumentException("Full name must not be null or blank");
+        }
+        if (fullName.length() > 100) {
+            throw new IllegalArgumentException("Full name must be at most 100 characters");
+        }
+        this.fullName = fullName.trim();
+    }
+
+    public void changeUserName(String userName) {
+        if (userName == null || userName.isBlank()) {
+            throw new IllegalArgumentException("Username must not be null or blank");
+        }
+        if (userName.length() > 50) {
+            throw new IllegalArgumentException("Username must be at most 50 characters");
+        }
+        this.userName = userName.trim();
+    }
+
+    public void changeEmail(Email email) {
+        if (email == null) {
+            throw new IllegalArgumentException("Email must not be null");
+        }
+        this.email = email;
+    }
+
+    public void changeBirthDate(LocalDate birthDate) {
+        if (birthDate == null) {
+            throw new IllegalArgumentException("Birth date must not be null");
+        }
+        if (birthDate.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Birth date must not be in the future");
+        }
+        this.birthDate = birthDate;
+    }
+
+    public void changeBiography(String biography) {
+        if (biography != null && biography.length() > 500) {
+            throw new IllegalArgumentException("Biography must be at most 500 characters");
+        }
+        this.biography = biography != null ? biography.trim() : null;
+    }
+
+    public void changePassword(String password) {
+        if (password == null || password.length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters");
+        }
+        if (password.length() > 255) {
+            throw new IllegalArgumentException("Password must be at most 255 characters");
+        }
+        this.password = password;
+    }
+
+    public void changeProfilePrivacyStatus(PrivacyStatusEnum profilePrivacyStatus) {
+        if (profilePrivacyStatus == null) {
+            throw new IllegalArgumentException("Privacy status must not be null");
+        }
+        this.profilePrivacyStatus = profilePrivacyStatus;
+    }
+
+    public void disable() {
+        if (!this.active) {
+            throw new ResourceDisabledException("User is already disabled");
+        }
+        this.active = false;
+    }
+
+    public void enable() {
+        if (this.active) {
+            throw new ResourceAlreadyActiveException("User is already active");
+        }
         this.active = true;
-        this.followersCount = 0;
-        this.followingCount = 0;
-        this.postCount = 0;
-
-        if (data.biography() != null){ this.biography = data.biography(); }
-        if (data.gender() != null){ this.gender = data.gender(); }
     }
 
-    public void updateData(UserUpdateRequest data) {
-        if (data.fullName() != null){
-            this.fullName = data.fullName();
-        }
-        if (data.userName() != null){
-            this.userName = data.userName();
-        }
-        if (data.email() != null){
-            this.email = data.email();
-        }
-        if (data.birthDate() != null){
-            this.birthDate = data.birthDate();
-        }
-        if(data.profilePrivacyStatus() != null){
-            this.profilePrivacyStatus = data.profilePrivacyStatus();
-        }
-        if (data.password() != null){
-            this.password = data.password();
-        }
-        if (data.biography() != null){
-            this.biography = data.biography();
-        }
-        if (data.gender() != null){
-            this.gender = data.gender();
-        }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User user)) return false;
+        return id != null && Objects.equals(id, user.id);
     }
 
-    public void followUser(User userToFollow) {
-        if (!this.following.contains(userToFollow)) {
-            this.following.add(userToFollow);
-            userToFollow.getFollowers().add(this);
-
-            userToFollow.setFollowersCount(userToFollow.getFollowersCount()+1);
-            this.followingCount++;
-        }
-    }
-
-    public void unfollowUser(User userToUnfollow) {
-        this.following.remove(userToUnfollow);
-        userToUnfollow.getFollowers().remove(this);
-
-        userToUnfollow.setFollowersCount(userToUnfollow.getFollowersCount()-1);
-        this.followingCount--;
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

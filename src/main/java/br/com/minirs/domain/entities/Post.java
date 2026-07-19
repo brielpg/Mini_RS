@@ -1,50 +1,125 @@
 package br.com.minirs.domain.entities;
 
-import br.com.minirs.application.dtos.post.PostCreateRequest;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import br.com.minirs.domain.exceptions.ResourceAlreadyActiveException;
+import br.com.minirs.domain.exceptions.ResourceDisabledException;
 import jakarta.persistence.*;
-import lombok.*;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Entity
-@Table(name = "minirs_posts")
-@NoArgsConstructor
-@AllArgsConstructor
-@Data
-@ToString
-@EqualsAndHashCode(of = "id")
+@Table(name = "tb_posts")
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String content;
-    private Boolean active;
-    private LocalDate publishDate;
-    private List<LocalDate> updateDates = new ArrayList<>();
-    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @JoinColumn(name = "userId")
-    private User postOwner;
-    @OneToMany(mappedBy = "post", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private Set<Comments> comment = new HashSet<>();
-    @JsonIgnore
-    private List<Long> likesByUserId = new ArrayList<>();
-    private Integer likeCount;
 
-    public Post(PostCreateRequest data, User postOwner){
-        this.content = data.content();
-        this.active = true;
-        this.publishDate = LocalDate.now();
-        this.likeCount = 0;
+    @Column(name = "content", nullable = false, length = 1000)
+    private String content;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User postOwner;
+
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
+
+    @Column(name = "published_at", nullable = false, updatable = false)
+    private LocalDateTime publishedAt = LocalDateTime.now();
+
+    @ElementCollection
+    @CollectionTable(name = "post_update_dates", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "update_dates")
+    private List<LocalDateTime> updateDates = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "post_likes", joinColumns = @JoinColumn(name = "post_id"))
+    private Set<Long> likesByUserId = new HashSet<>();
+
+    protected Post() {
+    }
+
+    public Post(String content, User postOwner) {
+        if (postOwner == null) {
+            throw new IllegalArgumentException("Post owner must not be null");
+        }
+
+        changeContent(content);
         this.postOwner = postOwner;
     }
 
-    public void updatePost(String content) {
-        this.content = content;
-        this.updateDates.add(LocalDate.now());
+    public Long getId() {
+        return id;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public LocalDateTime getPublishedAt() {
+        return publishedAt;
+    }
+
+    public User getPostOwner() {
+        return postOwner;
+    }
+
+    public void changeContent(String content) {
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("Content must not be null or blank");
+        }
+        if (content.length() > 1000) {
+            throw new IllegalArgumentException("Content must be at most 1000 characters");
+        }
+        this.content = content.trim();
+    }
+
+    public void updatePost(String newContent) {
+        changeContent(newContent);
+        this.updateDates.add(LocalDateTime.now());
+    }
+
+    public void delete() {
+        if (!this.active) {
+            throw new ResourceDisabledException("Post is already deactivated");
+        }
+        this.active = false;
+    }
+
+    public void reactivate() {
+        if (this.active) {
+            throw new ResourceAlreadyActiveException("Post is already active");
+        }
+        this.active = true;
+    }
+
+    public void likeBy(Long userId) {
+        Objects.requireNonNull(userId, "User ID must not be null");
+        if (likesByUserId.contains(userId)) {
+            throw new IllegalStateException("User already liked this post");
+        }
+        this.likesByUserId.add(userId);
+    }
+
+    public void dislikeBy(Long userId) {
+        Objects.requireNonNull(userId, "User ID must not be null");
+        if (!this.likesByUserId.remove(userId)) {
+            throw new IllegalStateException("User has not liked this post");
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Post post)) return false;
+        return id != null && Objects.equals(id, post.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
