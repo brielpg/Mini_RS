@@ -1,27 +1,24 @@
 package br.com.minirs.application.dtos.user;
 
-import br.com.minirs.domain.enums.PrivacyStatusEnum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record UserCreateRequest(
-        @NotBlank(message = "Nome é obrigatório")
+        @NotBlank(message = "Full name is required")
         String fullName,
-        @NotBlank(message = "Username é obrigatório")
+        @NotBlank(message = "Username is required")
         String userName,
-        @Email(message = "Invalid Email")
-        @NotBlank(message = "Email é obrigatório")
+        @Email(message = "Invalid email address")
+        @NotBlank(message = "Email is required")
         String email,
-        @NotNull(message = "Birth date é obrigatório")
-        LocalDate birthDate,
-        @NotNull(message = "Profile privacy é obrigatório")
-        PrivacyStatusEnum profilePrivacyStatus,
-        @NotNull(message = "Password é obrigatório")
-        String password,
-        String biography,
-        String gender
+        @NotNull(message = "Birth date is required")
+        @Past(message = "Birth date must be in the past")
+        LocalDateTime birthDate,
+        @NotNull(message = "Password is required")
+        String password
 ) {
 }

@@ -4,11 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record PostUpdateRequest(
-        @NotNull(message = "Post Id é obrigatório")
+        @NotNull(message = "Post Id is required")
         Long postId,
-        @NotNull(message = "User Id é obrigatório")
-        Long userId,
-        @NotBlank(message = "Post Content é obrigatório")
+        @NotBlank(message = "Post content is required")
         String content
 ) {
 }

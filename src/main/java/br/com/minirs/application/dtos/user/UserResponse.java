@@ -1,26 +1,19 @@
 package br.com.minirs.application.dtos.user;
 
 import br.com.minirs.domain.enums.PrivacyStatusEnum;
-import br.com.minirs.domain.entities.User;
 
-public class UserResponse {
-    public Long id;
-    public String fullName;
-    public String userName;
-    public String email;
-    public PrivacyStatusEnum profilePrivacyStatus;
-    public Integer followersCount;
-    public Integer followingCount;
-    public Integer postCount;
+import java.time.LocalDateTime;
 
-    public UserResponse(User user){
-        this.id = user.getId();
-        this.fullName = user.getFullName();
-        this.userName = user.getUserName();
-        this.email = user.getEmail();
-        this.profilePrivacyStatus = user.getProfilePrivacyStatus();
-        this.followersCount = user.getFollowersCount();
-        this.followingCount = user.getFollowingCount();
-        this.postCount = user.getPostCount();
-    }
+public record UserResponse (
+        Long id,
+        String fullName,
+        String userName,
+        String email,
+        LocalDateTime birthDate,
+        PrivacyStatusEnum profilePrivacyStatus,
+        Integer followersCount,
+        Integer followingCount,
+        Integer postCount,
+        LocalDateTime createdAt
+) {
 }
