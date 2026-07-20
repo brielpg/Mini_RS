@@ -27,11 +27,6 @@ public class Post {
     private LocalDateTime publishedAt = LocalDateTime.now();
 
     @ElementCollection
-    @CollectionTable(name = "post_update_dates", joinColumns = @JoinColumn(name = "post_id"))
-    @Column(name = "update_dates")
-    private List<LocalDateTime> updateDates = new ArrayList<>();
-
-    @ElementCollection
     @CollectionTable(name = "post_likes", joinColumns = @JoinColumn(name = "post_id"))
     private Set<Long> likesByUserId = new HashSet<>();
 
@@ -79,7 +74,6 @@ public class Post {
 
     public void updatePost(String newContent) {
         changeContent(newContent);
-        this.updateDates.add(LocalDateTime.now());
     }
 
     public void delete() {
