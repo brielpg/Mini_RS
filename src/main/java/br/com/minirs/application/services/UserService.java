@@ -1,16 +1,16 @@
 package br.com.minirs.application.services;
 
 import br.com.minirs.application.dtos.user.UserCreateRequest;
-import br.com.minirs.application.dtos.user.UserResponse;
 import br.com.minirs.application.dtos.user.UserUpdateRequest;
+import br.com.minirs.application.mappers.UserMapper;
+import br.com.minirs.domain.entities.Follow;
 import br.com.minirs.domain.entities.User;
 import br.com.minirs.domain.exceptions.NotFoundException;
-import br.com.minirs.domain.exceptions.ResourceAlreadyActiveException;
 import br.com.minirs.domain.exceptions.ResourceDisabledException;
 import br.com.minirs.domain.exceptions.user.EmailAlreadyRegisteredException;
 import br.com.minirs.domain.exceptions.user.UserNameAlreadyRegisteredException;
+import br.com.minirs.infrastructure.repositories.FollowRepository;
 import br.com.minirs.infrastructure.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,110 +18,107 @@ import java.util.List;
 
 @Service
 public class UserService {
+    private final UserRepository repository;
+    private final FollowRepository followRepository;
+    private final UserMapper mapper;
 
-    @Autowired
-    private UserRepository userRepository;
+    public UserService(UserRepository repository, FollowRepository followRepository, UserMapper mapper) {
+        this.repository = repository;
+        this.followRepository = followRepository;
+        this.mapper = mapper;
+    }
 
     @Transactional
-    public UserResponse createUser(UserCreateRequest data) {
+    public User createUser(UserCreateRequest data) {
         validateEmailAndUsername(data.email(), data.userName());
 
-        var newUser = new User(data);
+        User newUser = mapper.toEntity(data);
         this.save(newUser);
 
-        return new UserResponse(newUser);
+        return newUser;
     }
 
     @Transactional
-    public UserResponse updateUser(UserUpdateRequest data) {
+    public User updateUser(UserUpdateRequest data) {
         validateUserExistsById(data.id());
 
-        var user = this.getReferenceById(data.id());
+        User user = this.getReferenceById(data.id());
 
         validateUserActive(user);
         validateEmailAndUsername(data.email(), data.userName());
 
-        user.updateData(data);
+        mapper.updateEntity(data, user);
         this.save(user);
 
-        return new UserResponse(user);
+        return user;
     }
 
     @Transactional
-    public UserResponse disableUser(Long id) {
+    public void disableUser(Long id) {
         validateUserExistsById(id);
 
-        var user = this.getReferenceById(id);
+        User user = this.getReferenceById(id);
 
-        if (!user.getActive()) throw new ResourceDisabledException("User is already disabled");
-
-        user.setActive(false);
+        user.disable();
         this.save(user);
-
-        return new UserResponse(user);
-
     }
 
     @Transactional
-    public UserResponse enableUser(Long id) {
+    public User enableUser(Long id) {
         validateUserExistsById(id);
 
-        var user = this.getReferenceById(id);
+        User user = this.getReferenceById(id);
 
-        if (user.getActive()) throw new ResourceAlreadyActiveException("User", id);
-
-        user.setActive(true);
+        user.enable();
         this.save(user);
 
-        return new UserResponse(user);
+        return user;
     }
 
     @Transactional(readOnly = true)
-    public List<String> getFollowersList(Long id) {
+    public List<User> getFollowersList(Long id) {
         validateUserExistsById(id);
 
-        var user = this.getReferenceById(id);
+        User user = this.getReferenceById(id);
 
         validateUserActive(user);
 
-        return user.getFollowers().stream()
-                .map(User::getUserName)
+        return followRepository.findByFollowed(user).stream()
+                .map(Follow::getFollower)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<String> getFollowingList(Long id) {
+    public List<User> getFollowingList(Long id) {
         validateUserExistsById(id);
 
-        var user = this.getReferenceById(id);
+        User user = this.getReferenceById(id);
 
         validateUserActive(user);
 
-        return user.getFollowing().stream()
-                .map(User::getUserName)
+        return followRepository.findByFollower(user).stream()
+                .map(Follow::getFollowed)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findActiveUsers().stream()
-                .map(UserResponse::new)
-                .toList();
+    public List<User> getAllUsers() {
+        return repository.findActiveUsers();
     }
 
     @Transactional(readOnly = true)
-    public UserResponse getUserById(Long id) {
+    public User getUserById(Long id) {
         validateUserExistsById(id);
 
-        var user = this.getReferenceById(id);
+        User user = this.getReferenceById(id);
 
         this.validateUserActive(user);
 
-        return new UserResponse(user);
+        return user;
     }
 
     public void validateUserExistsById(Long id) {
-        if (!userRepository.existsById(id)) {
+        if (!repository.existsById(id)) {
             throw new NotFoundException("User", id);
         }
     }
@@ -137,25 +134,28 @@ public class UserService {
     }
 
     public void validateUserActive(User user) {
-        if (!user.getActive()) {
-            throw new ResourceDisabledException("User", user.getId());
+        if (!user.isActive()) {
+            throw new ResourceDisabledException("User is already deactivated");
         }
     }
 
     @Transactional
     public void save(User user) {
-        userRepository.save(user);
+        repository.save(user);
     }
 
+    @Transactional(readOnly = true)
     private User findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        return repository.findByEmail(email);
     }
 
+    @Transactional(readOnly = true)
     private User findByUserName(String username) {
-        return userRepository.findByUserName(username);
+        return repository.findByUserName(username);
     }
 
+    @Transactional(readOnly = true)
     public User getReferenceById(Long id) {
-        return userRepository.getReferenceById(id);
+        return repository.getReferenceById(id);
     }
 }

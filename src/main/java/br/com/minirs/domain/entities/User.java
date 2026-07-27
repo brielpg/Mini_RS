@@ -5,7 +5,7 @@ import br.com.minirs.domain.exceptions.ResourceAlreadyActiveException;
 import br.com.minirs.domain.exceptions.ResourceDisabledException;
 import br.com.minirs.domain.valueobjects.Email;
 import jakarta.persistence.*;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -26,7 +26,7 @@ public class User {
     private Email email;
 
     @Column(name = "birth_date", nullable = false)
-    private LocalDate birthDate;
+    private LocalDateTime birthDate;
 
     @Column(name = "biography", length = 500)
     private String biography;
@@ -47,7 +47,7 @@ public class User {
     protected User() {
     }
 
-    public User(String fullName, String userName, Email email, LocalDate birthDate, String password) {
+    public User(String fullName, String userName, Email email, LocalDateTime birthDate, String password) {
         changeFullName(fullName);
         changeUserName(userName);
         changeEmail(email);
@@ -87,6 +87,14 @@ public class User {
         return profilePrivacyStatus == PrivacyStatusEnum.PRIVATE;
     }
 
+    public LocalDateTime getBirthDate() {
+        return birthDate;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
     public void changeFullName(String fullName) {
         if (fullName == null || fullName.isBlank()) {
             throw new IllegalArgumentException("Full name must not be null or blank");
@@ -114,11 +122,11 @@ public class User {
         this.email = email;
     }
 
-    public void changeBirthDate(LocalDate birthDate) {
+    public void changeBirthDate(LocalDateTime birthDate) {
         if (birthDate == null) {
             throw new IllegalArgumentException("Birth date must not be null");
         }
-        if (birthDate.isAfter(LocalDate.now())) {
+        if (birthDate.isAfter(LocalDateTime.now())) {
             throw new IllegalArgumentException("Birth date must not be in the future");
         }
         this.birthDate = birthDate;

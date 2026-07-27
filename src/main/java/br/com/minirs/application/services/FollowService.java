@@ -1,60 +1,62 @@
 package br.com.minirs.application.services;
 
-import br.com.minirs.application.dtos.follow.FollowRequestResponse;
-import br.com.minirs.application.dtos.user.UserResponse;
+import br.com.minirs.application.mappers.FollowRequestMapper;
+import br.com.minirs.domain.entities.Follow;
 import br.com.minirs.domain.entities.FollowRequest;
 import br.com.minirs.domain.entities.User;
 import br.com.minirs.domain.enums.PrivacyStatusEnum;
 import br.com.minirs.domain.exceptions.NotFoundException;
-import br.com.minirs.domain.exceptions.ResourceDisabledException;
 import br.com.minirs.domain.exceptions.UnauthorizedException;
 import br.com.minirs.domain.exceptions.follow.InvalidFollowRequestException;
+import br.com.minirs.infrastructure.repositories.FollowRepository;
 import br.com.minirs.infrastructure.repositories.FollowRequestRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FollowService {
+    private final UserService userService;
+    private final FollowRequestRepository followRequestRepository;
+    private final FollowRepository followRepository;
+    private final FollowRequestMapper followRequestMapper;
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private FollowRequestRepository followRequestRepository;
-
-    @Transactional
-    public UserResponse acceptFollowRequest(Long requestId, Long requestedUserId) {
-        userService.validateUserExistsById(requestedUserId);
-        validateFollowRequestExistsById(requestId);
-
-        var followRequest = this.getReferenceById(requestId);
-        var requested = userService.getReferenceById(requestedUserId);
-
-        validateFollowRequestActive(followRequest);
-        validateRequest(followRequest, requested);
-
-        followRequest.acceptRequest();
-        this.save(followRequest);
-
-        return new UserResponse(followRequest.getRequester());
+    public FollowService(UserService userService, FollowRequestRepository followRequestRepository, FollowRepository followRepository, FollowRequestMapper followRequestMapper) {
+        this.userService = userService;
+        this.followRequestRepository = followRequestRepository;
+        this.followRepository = followRepository;
+        this.followRequestMapper = followRequestMapper;
     }
 
     @Transactional
-    public UserResponse denyFollowRequest(Long requestId, Long requestedUserId) {
+    public User acceptFollowRequest(Long requestId, Long requestedUserId) {
         userService.validateUserExistsById(requestedUserId);
         validateFollowRequestExistsById(requestId);
 
         var followRequest = this.getReferenceById(requestId);
         var requested = userService.getReferenceById(requestedUserId);
 
-        validateFollowRequestActive(followRequest);
         validateRequest(followRequest, requested);
 
-        followRequest.denyRequest();
-        this.save(followRequest);
+        var follow = new Follow(followRequest.getRequester(), followRequest.getRequested());
+        followRepository.save(follow);
+        followRequestRepository.delete(followRequest);
 
-        return new UserResponse(followRequest.getRequester());
+        return followRequest.getRequester();
+    }
+
+    @Transactional
+    public User denyFollowRequest(Long requestId, Long requestedUserId) {
+        userService.validateUserExistsById(requestedUserId);
+        validateFollowRequestExistsById(requestId);
+
+        var followRequest = this.getReferenceById(requestId);
+        var requested = userService.getReferenceById(requestedUserId);
+
+        validateRequest(followRequest, requested);
+
+        followRequestRepository.delete(followRequest);
+
+        return followRequest.getRequester();
     }
 
     @Transactional
@@ -71,19 +73,19 @@ public class FollowService {
             if (followRequestRepository.existsActiveFollowRequest(loggedUser.getId(), followUser.getId())) {
                 throw new InvalidFollowRequestException("A follow request has already been submitted.");
             }
-            var followRequest = new FollowRequest(loggedUser, followUser);
+            var followRequest = followRequestMapper.toEntity(loggedUser, followUser);
             this.save(followRequest);
-            return new FollowRequestResponse(followRequest);
+            return followRequest;
         }
 
-        loggedUser.followUser(followUser);
-        userService.save(loggedUser);
+        var follow = new Follow(loggedUser, followUser);
+        followRepository.save(follow);
 
-        return new UserResponse(loggedUser);
+        return loggedUser;
     }
 
     @Transactional
-    public UserResponse unfollowUser(Long loggedUserId, Long followUserId) {
+    public User unfollowUser(Long loggedUserId, Long followUserId) {
         userService.validateUserExistsById(loggedUserId);
         userService.validateUserExistsById(followUserId);
 
@@ -92,21 +94,16 @@ public class FollowService {
         var loggedUser = userService.getReferenceById(loggedUserId);
         var unfollowUser = userService.getReferenceById(followUserId);
 
-        loggedUser.unfollowUser(unfollowUser);
-        userService.save(loggedUser);
+        var follow = followRepository.findByFollowerAndFollowed(loggedUser, unfollowUser)
+                .orElseThrow(() -> new InvalidFollowRequestException("User is not following another user."));
+        followRepository.delete(follow);
 
-        return new UserResponse(loggedUser);
+        return loggedUser;
     }
 
     private void validateFollowRequestExistsById(Long id) {
         if (!followRequestRepository.existsById(id)) {
             throw new NotFoundException("Follow Request", id);
-        }
-    }
-
-    private void validateFollowRequestActive(FollowRequest followRequest) {
-        if (!followRequest.getActive()) {
-            throw new ResourceDisabledException("Follow Request", followRequest.getId());
         }
     }
 
@@ -127,11 +124,13 @@ public class FollowService {
         userService.validateUserActive(loggedUser);
         userService.validateUserActive(targetUser);
 
-        if (isFollowAction && loggedUser.getFollowing().contains(targetUser)) {
+        var followOpt = followRepository.findByFollowerAndFollowed(loggedUser, targetUser);
+
+        if (isFollowAction && followOpt.isPresent()) {
             throw new InvalidFollowRequestException("User is already following another user.");
         }
 
-        if (!isFollowAction && !loggedUser.getFollowing().contains(targetUser)) {
+        if (!isFollowAction && followOpt.isEmpty()) {
             throw new InvalidFollowRequestException("User is not following another user.");
         }
     }

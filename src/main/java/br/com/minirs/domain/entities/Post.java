@@ -62,6 +62,10 @@ public class Post {
         return postOwner;
     }
 
+    public int getLikeCount() {
+        return likesByUserId.size();
+    }
+
     public void changeContent(String content) {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("Content must not be null or blank");
@@ -70,10 +74,6 @@ public class Post {
             throw new IllegalArgumentException("Content must be at most 1000 characters");
         }
         this.content = content.trim();
-    }
-
-    public void updatePost(String newContent) {
-        changeContent(newContent);
     }
 
     public void delete() {

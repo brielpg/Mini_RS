@@ -1,18 +1,15 @@
 package br.com.minirs.application.services;
 
 import br.com.minirs.application.dtos.post.PostCreateRequest;
-import br.com.minirs.application.dtos.post.PostResponse;
 import br.com.minirs.application.dtos.post.PostUpdateRequest;
 import br.com.minirs.application.dtos.reactions.LikeRequest;
+import br.com.minirs.application.mappers.PostMapper;
 import br.com.minirs.domain.entities.Post;
 import br.com.minirs.domain.entities.User;
 import br.com.minirs.domain.exceptions.NotFoundException;
-import br.com.minirs.domain.exceptions.ResourceAlreadyActiveException;
 import br.com.minirs.domain.exceptions.ResourceDisabledException;
 import br.com.minirs.domain.exceptions.UnauthorizedException;
-import br.com.minirs.domain.exceptions.post.LikedPostsException;
 import br.com.minirs.infrastructure.repositories.PostRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,176 +17,148 @@ import java.util.List;
 
 @Service
 public class PostService {
+    private final PostRepository repository;
+    private final PostMapper mapper;
+    private final UserService userService;
 
-    @Autowired
-    private PostRepository postRepository;
+    private static final String NOT_ALLOWED = "User is not allowed to perform this action";
 
-    @Autowired
-    private UserService userService;
-
+    public PostService(PostRepository repository, PostMapper mapper, UserService userService) {
+        this.repository = repository;
+        this.mapper = mapper;
+        this.userService = userService;
+    }
 
     @Transactional
-    public PostResponse createPost(PostCreateRequest data) {
+    public Post createPost(PostCreateRequest data) {
         userService.validateUserExistsById(data.userId());
 
-        var user = userService.getReferenceById(data.userId());
-        user.setPostCount(user.getPostCount() + 1);
-        var newPost = new Post(data, user);
+        User user = userService.getReferenceById(data.userId());
+        Post newPost = mapper.toEntity(data, user);
 
         this.save(newPost);
 
-        return new PostResponse(newPost);
+        return newPost;
     }
 
     @Transactional
-    public PostResponse deletePost(Long postId, Long userId) {
+    public void deletePost(Long postId, Long userId) {
         validatePostExistsById(postId);
 
-        var post = this.getReferenceById(postId);
-        var user = userService.getReferenceById(userId);
-
-        validatePostOwner(post,user,"User is not allowed to delete this post");
-
+        Post post = this.getReferenceById(postId);
         validatePostActive(post);
 
-        post.setActive(false);
-        user.setPostCount(user.getPostCount() - 1);
+        User user = userService.getReferenceById(userId);
+        validatePostOwner(post, user, NOT_ALLOWED);
 
-        userService.save(user);
+        post.delete();
         this.save(post);
-
-        return new PostResponse(post);
     }
 
     @Transactional
-    public PostResponse reactivatePost(Long postId, Long userId) {
+    public Post reactivatePost(Long postId, Long userId) {
         validatePostExistsById(postId);
 
-        var post = this.getReferenceById(postId);
-        var user = userService.getReferenceById(userId);
+        Post post = this.getReferenceById(postId);
+        User user = userService.getReferenceById(userId);
 
-        validatePostOwner(post, user, "User is not allowed to reactivate this post");
+        validatePostOwner(post, user, NOT_ALLOWED);
 
-        if (post.getActive()) throw new ResourceAlreadyActiveException("Post", postId);
-
-        post.setActive(true);
-        user.setPostCount(user.getPostCount() + 1);
-
-        userService.save(user);
+        post.reactivate();
         this.save(post);
 
-        return new PostResponse(post);
+        return post;
     }
 
     @Transactional
-    public PostResponse updatePost(PostUpdateRequest data) {
+    public Post updatePost(PostUpdateRequest data, Long userId) {
         validatePostExistsById(data.postId());
 
-        var post = this.getReferenceById(data.postId());
-        var user = userService.getReferenceById(data.userId());
+        Post post = this.getReferenceById(data.postId());
+        User user = userService.getReferenceById(userId);
 
         validatePostOwner(post, user, "User is not allowed to update this post");
 
         validatePostActive(post);
 
-        post.updatePost(data.content());
+        post.changeContent(data.content());
         this.save(post);
 
-        return new PostResponse(post);
+        return post;
     }
 
     @Transactional(readOnly = true)
-    public List<PostResponse> getPostsByUser(Long userId) {
+    public List<Post> getPostsByUser(Long userId) {
         userService.validateUserExistsById(userId);
-        var user = userService.getReferenceById(userId);
+        User user = userService.getReferenceById(userId);
         userService.validateUserActive(user);
 
-        var postsByOwner = postRepository.findActivePostsByPostOwner(user);
-        return postsByOwner.stream()
-                .map(PostResponse::new)
+        return repository.findActivePostsByPostOwner(user);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Post> getFollowingUsersPosts(Long userId) {
+        userService.validateUserExistsById(userId);
+        User user = userService.getReferenceById(userId);
+        userService.validateUserActive(user);
+
+        return userService.getFollowingList(userId).stream()
+                .flatMap(i -> repository.findActivePostsByPostOwner(i).stream())
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<PostResponse> getFollowingUsersPosts(Long userId) {
-        userService.validateUserExistsById(userId);
-        var user = userService.getReferenceById(userId);
-        userService.validateUserActive(user);
-
-        return user.getFollowing().stream()
-                .flatMap(i -> postRepository.findActivePostsByPostOwner(i).stream())
-                .map(PostResponse::new)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public PostResponse getPostById(Long id) {
+    public Post getPostById(Long id) {
         validatePostExistsById(id);
 
-        var post = this.getReferenceById(id);
+        Post post = this.getReferenceById(id);
 
         validatePostActive(post);
 
-        return new PostResponse(post);
+        return post;
     }
 
     @Transactional
-    public PostResponse likePost(LikeRequest data) {
+    public Post likePost(LikeRequest data) {
         userService.validateUserExistsById(data.userId());
         validatePostExistsById(data.postId());
 
-        var post = this.getReferenceById(data.postId());
+        Post post = this.getReferenceById(data.postId());
 
         validatePostActive(post);
 
-        var user = userService.getReferenceById(data.userId());
+        User user = userService.getReferenceById(data.userId());
 
-        for (var i : post.getLikesByUserId()) {
-            if (i.equals(user.getId())) {
-                throw new LikedPostsException("User already liked this post");
-            }
-        }
-
-        post.getLikesByUserId().add(data.userId());
-        post.setLikeCount(post.getLikeCount() + 1);
+        post.likeBy(user.getId());
         this.save(post);
 
-        return new PostResponse(post);
+        return post;
     }
 
     @Transactional
-    public PostResponse dislikePost(LikeRequest data) {
+    public Post dislikePost(LikeRequest data) {
         userService.validateUserExistsById(data.userId());
         validatePostExistsById(data.postId());
 
-        var post = this.getReferenceById(data.postId());
+        Post post = this.getReferenceById(data.postId());
 
         validatePostActive(post);
 
-        var user = userService.getReferenceById(data.userId());
+        User user = userService.getReferenceById(data.userId());
 
-        for (var i : post.getLikesByUserId()) {
-            if (i.equals(user.getId())) {
-                post.getLikesByUserId().remove(i);
-                post.setLikeCount(post.getLikeCount() - 1);
-                this.save(post);
+        post.dislikeBy(user.getId());
+        this.save(post);
 
-                return new PostResponse(post);
-            }
-        }
-        throw new LikedPostsException("User didn't like this post.");
-
+        return post;
     }
 
     @Transactional(readOnly = true)
-    public List<PostResponse> getPublicFeed() {
-        return postRepository.findAllPostsWherePostOwnerProfileIsPublic().stream()
-                .map(PostResponse::new)
-                .toList();
+    public List<Post> getPublicFeed() {
+        return repository.findAllPostsWherePostOwnerProfileIsPublic();
     }
 
     public void validatePostExistsById(Long id) {
-        if (!postRepository.existsById(id)) {
+        if (!repository.existsById(id)) {
             throw new NotFoundException("Post", id);
         }
     }
@@ -201,17 +170,17 @@ public class PostService {
     }
 
     private void validatePostActive(Post post) {
-        if (!post.getActive()) {
-            throw new ResourceDisabledException("Post", post.getId());
+        if (!post.isActive()) {
+            throw new ResourceDisabledException("Post is already deactivated");
         }
     }
 
     public Post getReferenceById(Long id) {
-        return postRepository.getReferenceById(id);
+        return repository.getReferenceById(id);
     }
 
     @Transactional
     private void save(Post post) {
-        postRepository.save(post);
+        repository.save(post);
     }
 }
