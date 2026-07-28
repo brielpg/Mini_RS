@@ -91,7 +91,10 @@ public class Post {
     }
 
     public void likeBy(Long userId) {
-        Objects.requireNonNull(userId, "User ID must not be null");
+        if (userId == null) {
+            throw new IllegalStateException("User ID must not be null");
+        }
+
         if (likesByUserId.contains(userId)) {
             throw new IllegalStateException("User already liked this post");
         }
@@ -99,7 +102,10 @@ public class Post {
     }
 
     public void dislikeBy(Long userId) {
-        Objects.requireNonNull(userId, "User ID must not be null");
+        if (userId == null) {
+            throw new IllegalStateException("User ID must not be null");
+        }
+
         if (!this.likesByUserId.remove(userId)) {
             throw new IllegalStateException("User has not liked this post");
         }
